@@ -2,6 +2,8 @@
    firebase-db.js - работа с Firebase Firestore
 */
 
+const db = window.firebaseDB;
+
 const COLLECTIONS = {
     PRODUCTS: 'products',
     MENU_HISTORY: 'menuHistory',
@@ -37,10 +39,7 @@ const FEEDBACK_CATEGORIES = {
     ]
 };
 
-// ============================================
 // ПРОДУКТЫ
-// ============================================
-
 async function dbGetAllProducts() {
     const snapshot = await db.collection(COLLECTIONS.PRODUCTS).get();
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -68,10 +67,7 @@ async function dbDeleteProduct(id) {
     await db.collection(COLLECTIONS.PRODUCTS).doc(id.toString()).delete();
 }
 
-// ============================================
 // НАСТРОЙКИ
-// ============================================
-
 async function dbSaveSetting(key, value) {
     await db.collection(COLLECTIONS.USER_SETTINGS).doc(key).set({ value });
 }
@@ -88,34 +84,21 @@ async function dbGetAllSettings() {
     return result;
 }
 
-// ============================================
-// МЕНЮ С ПРИВЯЗКОЙ К НЕДЕЛЯМ
-// ============================================
-
+// МЕНЮ
 async function dbSaveMenu(menuItems, weekStart) {
     const weekKey = weekStart || appData.weekStartDate;
     const menuCopy = menuItems.map(m => ({ ...m, cooked: m.cooked || false, liked: m.liked ?? null }));
-    
     const existing = await db.collection(COLLECTIONS.MENU_HISTORY).where('weekStart', '==', weekKey).get();
-    
     if (!existing.empty) {
-        await db.collection(COLLECTIONS.MENU_HISTORY).doc(existing.docs[0].id).update({
-            menu: menuCopy,
-            date: new Date().toISOString()
-        });
+        await db.collection(COLLECTIONS.MENU_HISTORY).doc(existing.docs[0].id).update({ menu: menuCopy, date: new Date().toISOString() });
     } else {
-        await db.collection(COLLECTIONS.MENU_HISTORY).add({
-            date: new Date().toISOString(),
-            weekStart: weekKey,
-            menu: menuCopy
-        });
+        await db.collection(COLLECTIONS.MENU_HISTORY).add({ date: new Date().toISOString(), weekStart: weekKey, menu: menuCopy });
     }
 }
 
 async function dbGetMenuForWeek(weekStart) {
     const snapshot = await db.collection(COLLECTIONS.MENU_HISTORY).where('weekStart', '==', weekStart).get();
-    if (snapshot.empty) return null;
-    return snapshot.docs[0].data().menu;
+    return snapshot.empty ? null : snapshot.docs[0].data().menu;
 }
 
 async function dbGetMenuHistory() {
@@ -123,10 +106,7 @@ async function dbGetMenuHistory() {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
-// ============================================
 // ОЦЕНКИ
-// ============================================
-
 async function dbSaveMealRating(title, mealInfo, liked, tags = [], notes = '') {
     await db.collection(COLLECTIONS.MEAL_RATINGS).add({
         title, meal: mealInfo.meal || '', day: mealInfo.day || '',
@@ -144,10 +124,7 @@ async function dbGetAllRatings() {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
-// ============================================
-// УДАЛЕНИЕ И ОЧИСТКА
-// ============================================
-
+// УДАЛЕНИЕ
 async function deleteFromStore(collection, id) {
     await db.collection(collection).doc(id.toString()).delete();
 }
@@ -159,10 +136,7 @@ async function clearStore(collection) {
     await batch.commit();
 }
 
-// ============================================
 // ИНИЦИАЛИЗАЦИЯ
-// ============================================
-
 async function initializeDefaultProducts() {
     const existing = await dbGetAllProducts();
     if (existing.length === 0 && typeof MY_PRODUCTS !== 'undefined') {
@@ -175,22 +149,16 @@ async function initializeDefaultProducts() {
 
 async function loadAllDataToAppData() {
     appData.products = await dbGetAllProducts();
-    
     const ratings = await dbGetAllRatings();
     appData.mealRatings = {};
     ratings.forEach(r => {
         const key = r.title;
-        if (!appData.mealRatings[key]) {
-            appData.mealRatings[key] = { title: r.title, liked: 0, disliked: 0, lastRated: null, tags: [], comments: '' };
-        }
+        if (!appData.mealRatings[key]) appData.mealRatings[key] = { title: r.title, liked: 0, disliked: 0, lastRated: null, tags: [], comments: '' };
         r.liked ? appData.mealRatings[key].liked++ : appData.mealRatings[key].disliked++;
         if (r.tags?.length) appData.mealRatings[key].tags = [...new Set([...(appData.mealRatings[key].tags||[]), ...r.tags])];
         if (r.notes) appData.mealRatings[key].comments = r.notes;
-        if (!appData.mealRatings[key].lastRated || r.date > appData.mealRatings[key].lastRated) {
-            appData.mealRatings[key].lastRated = r.date;
-        }
+        if (!appData.mealRatings[key].lastRated || r.date > appData.mealRatings[key].lastRated) appData.mealRatings[key].lastRated = r.date;
     });
-    
     const settings = await dbGetAllSettings();
     appData.userHeight = settings.userHeight || null;
     appData.userWeight = settings.userWeight || null;
@@ -199,11 +167,7 @@ async function loadAllDataToAppData() {
     appData.menuHistory = await dbGetMenuHistory();
     appData.shoppingList = settings.shoppingList || [];
     appData.weekStartDate = settings.weekStartDate || null;
-    
-    if (appData.weekStartDate) {
-        const menu = await dbGetMenuForWeek(appData.weekStartDate);
-        appData.parsedMenu = menu || [];
-    }
+    if (appData.weekStartDate) appData.parsedMenu = await dbGetMenuForWeek(appData.weekStartDate) || [];
 }
 
 async function saveAppDataToDB() {
@@ -224,18 +188,9 @@ async function initApp() {
     return appData;
 }
 
-// ============================================
-// БЕКАП (локальный)
-// ============================================
-
+// БЕКАП
 async function downloadBackup() {
-    const data = {
-        version: 1, exportDate: new Date().toISOString(),
-        products: await dbGetAllProducts(),
-        menuHistory: await dbGetMenuHistory(),
-        ratings: await dbGetAllRatings(),
-        settings: await dbGetAllSettings()
-    };
+    const data = { version: 1, exportDate: new Date().toISOString(), products: await dbGetAllProducts(), menuHistory: await dbGetMenuHistory(), ratings: await dbGetAllRatings(), settings: await dbGetAllSettings() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     a.download = `backup-${new Date().toISOString().split('T')[0]}.json`; a.click();
