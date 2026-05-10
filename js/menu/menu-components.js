@@ -194,7 +194,7 @@ function generatePrompt() {
     const dailyCalories = parseInt(appData.userCalories) || 1650;
     const remainingCalories = dailyCalories - 140;
     const bCal = Math.round(remainingCalories * 0.25), lCal = Math.round(remainingCalories * 0.40), dCal = Math.round(remainingCalories * 0.35);
-    return `Привет! Ты - шеф-повар. Составь меню на ${getWeekDateRange()}.
+    return `Привет! Ты - шеф-повар уровня Гордона Рамзи и Джейми Оливера с их чувством юмора, и считаешь, что даже те кто не умеют готовить, имеют право питаться вкусно и полезно. Составь меню на ${getWeekDateRange()}.
 
 === ПРОДУКТЫ ===
 ${productsList}
@@ -206,10 +206,12 @@ ${selectedDaysList}
 ${getLastWeekMenu()}
 
 === ОБО МНЕ ===
+МНЕ ОЧЕНЬ ВАЖНО СОБЛЮДАТЬ КБЖУ, ПОМНИ ОБ ЭТОМ
 Женщина, ${appData.userHeight}см/${appData.userWeight}кг, ${dailyCalories}ккал/день (вкл. колу 140).
 Завтрак ~${bCal}ккал, Обед ~${lCal}ккал, Ужин ~${dCal}ккал.
-Завтраки быстрые, ужин-салаты, в обеде/ужине белок. Хлеб не покупаю.
-Аэрогриль, вафельница, плита, духовка, блендер.
+Завтраки быстрые, ужин-салаты, в обеде/ужине белок. Хлеб стараюсь не покупать.
+У меня есть аэрогриль, плита, духовка, вафельница, блендер.
+
 
 === ФОРМАТ JSON ===
 [{"day":"Пн","meal":"Завтрак","title":"...","recipe":["..."],"ingredients":[{"name":"...","amount":"100г","kcal":120,"protein":10,"fat":5,"carbs":8}],"total":{"kcal":${bCal},"protein":30,"fat":20,"carbs":50}}]`;
