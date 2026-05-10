@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍽️ Мой планировщик меню</title>
+    <link rel="stylesheet" href="style.css?v=3">
+    
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Планировщик">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <meta name="theme-color" content="#D47B5A">
+</head>
+<body>
+    <div class="app-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <h1>🍽️ Мой планировщик меню</h1>
+            <div style="display: flex; gap: 10px;">
+                <button class="small-btn" onclick="exportForTelegramBot()">🤖 Бот</button>
+                <button class="small-btn" onclick="downloadBackup()">📥 Бекап</button>
+                <label class="small-btn" style="cursor: pointer;">
+                    📤 Восстановить
+                    <input type="file" accept=".json" style="display: none;" onchange="uploadBackup(this.files[0])">
+                </label>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('menu')">📅 Меню</button>
+            <button class="tab" onclick="showTab('products')">📦 Продукты</button>
+            <button class="tab" onclick="showTab('shopping')">🛒 Покупки</button>
+            <button class="tab" onclick="showTab('stats')">📊 Статистика</button>
+        </div>
+        
+        <div id="content" class="content"></div>
+    </div>
+
+    <script src="js/database.js?v=3"></script>
+    <script src="js/app.js?v=3"></script>
+    <script src="js/products/products.js?v=3"></script>
+    <script src="js/menu/menu-components.js?v=3"></script>
+    <script src="js/menu/menu-ratings.js?v=3"></script>
+    <script src="js/menu/menu-subtract.js?v=3"></script>
+    <script src="js/menu/menu.js?v=3"></script>
+    <script src="js/stats/stats.js?v=3"></script>
+    <script src="js/shopping/shopping.js?v=3"></script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                    console.log('SW registered');
+                }).catch(function(err) {
+                    console.log('SW error:', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
