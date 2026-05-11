@@ -1,5 +1,5 @@
 /*
-   products.js - работа с продуктами через Firebase
+   products.js - с весом одной единицы и количеством упаковок
 */
 
 function showProductsTab() {
@@ -7,10 +7,15 @@ function showProductsTab() {
     let html = `<h2>📦 Продукты в наличии</h2><div class="products-actions"><button class="add-btn" onclick="openAddProductModal()">➕ Добавить продукт</button></div>`;
     categories.forEach(cat => {
         const prods = getProductsByCategory(cat.id);
+        const totalWeight = prods.reduce((sum, p) => {
+            if (p.unitWeight && p.unitWeight > 0) return sum + (p.amount * p.unitWeight);
+            return sum;
+        }, 0);
         html += `<div class="category-block">
             <div class="category-header" onclick="toggleCategory('${cat.id}')">
                 <span class="category-title">${cat.icon} ${cat.name}</span>
-                <span class="category-count">${prods.length}</span>
+                <span class="category-count">${prods.length} поз.</span>
+                ${totalWeight > 0 ? `<span class="category-weight">${totalWeight > 1000 ? (totalWeight/1000).toFixed(1)+' кг' : totalWeight+' г'}</span>` : ''}
                 <span class="category-toggle" id="toggle-${cat.id}">▶</span>
             </div>
             <div id="category-${cat.id}" class="category-content" style="display:none;">${renderProductTable(cat.id)}</div>
@@ -22,11 +27,18 @@ function showProductsTab() {
 function renderProductTable(catId) {
     const prods = getProductsByCategory(catId);
     if (!prods.length) return '<p class="empty-message">Нет продуктов</p>';
-    let html = `<table class="products-table"><thead><tr><th>Продукт</th><th>Кол-во</th><th>Начато</th><th>❄️</th><th></th></tr></thead><tbody>`;
+    let html = `<table class="products-table"><thead><tr><th>Продукт</th><th>Кол-во</th><th>Вес 1 ед.</th><th>Общий вес</th><th>Начато</th><th>❄️</th><th></th></tr></thead><tbody>`;
     prods.forEach(p => {
+        const unitWeight = p.unitWeight || 0;
+        const totalWeight = unitWeight > 0 ? (p.amount * unitWeight) : 0;
+        const totalWeightStr = totalWeight > 0 ? (totalWeight >= 1000 ? (totalWeight/1000).toFixed(2)+' кг' : totalWeight+' г') : '—';
+        const unitWeightStr = unitWeight > 0 ? (unitWeight >= 1000 ? (unitWeight/1000).toFixed(1)+' кг' : unitWeight+' г') : '—';
+        
         html += `<tr>
-            <td>${p.name}</td>
+            <td><span class="product-name">${p.name}</span></td>
             <td>${p.amount} ${p.unit}</td>
+            <td>${unitWeightStr}</td>
+            <td>${totalWeightStr}</td>
             <td><input type="checkbox" ${p.isOpened?'checked':''} onchange="toggleOpened('${p.id}')"></td>
             <td><input type="checkbox" ${p.isFrozen?'checked':''} onchange="toggleFrozen('${p.id}')"></td>
             <td class="action-buttons">
@@ -55,18 +67,46 @@ function openAddProductModal() {
     
     const html = `
         <div id="productModal" class="modal-overlay" onclick="if(event.target===this) closeProductModal()">
-            <div class="modal-content">
+            <div class="modal-content" style="max-width:550px;">
                 <h3>➕ Новый продукт</h3>
-                <div class="form-group"><label>Название</label><input type="text" id="prodName" placeholder="Название"></div>
-                <div class="form-row">
-                    <div class="form-group" style="flex:2;"><label>Количество</label><input type="number" id="prodAmount" value="1" min="0" step="0.01"></div>
-                    <div class="form-group" style="flex:1;"><label>Ед.</label><select id="prodUnit"><option>г</option><option>кг</option><option>мл</option><option>л</option><option>шт</option><option>банка</option><option>упаковка</option></select></div>
+                
+                <div class="form-group">
+                    <label>Название</label>
+                    <input type="text" id="prodName" placeholder="Например: Гречка">
                 </div>
-                <div class="form-group"><label>Категория</label><select id="prodCat">${catsHtml}</select></div>
+                
+                <div class="form-row">
+                    <div class="form-group" style="flex:1.5;">
+                        <label>Количество</label>
+                        <input type="number" id="prodAmount" value="1" min="0" step="0.01">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Ед. измерения</label>
+                        <select id="prodUnit">
+                            <option value="г">г</option><option value="кг">кг</option>
+                            <option value="мл">мл</option><option value="л">л</option>
+                            <option value="шт">шт</option><option value="банка">банка</option>
+                            <option value="упаковка">упаковка</option>
+                            <option value="пакет">пакет</option>
+                            <option value="пучок">пучок</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1.5;">
+                        <label>Вес 1 ед. (г)</label>
+                        <input type="number" id="prodUnitWeight" value="0" min="0" step="1" placeholder="0 = не указывать">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Категория</label>
+                    <select id="prodCat">${catsHtml}</select>
+                </div>
+                
                 <div class="checkboxes">
-                    <label class="checkbox-label"><input type="checkbox" id="prodOpened"> Начато</label>
+                    <label class="checkbox-label"><input type="checkbox" id="prodOpened"> Начато / открыто</label>
                     <label class="checkbox-label"><input type="checkbox" id="prodFrozen"> ❄️ Морозильник</label>
                 </div>
+                
                 <div class="modal-actions">
                     <button class="primary-btn" onclick="saveNewProduct()">💾 Сохранить</button>
                     <button class="secondary-btn" onclick="closeProductModal()">Отмена</button>
@@ -85,23 +125,49 @@ function openEditProductModal(productId) {
     
     const html = `
         <div id="productModal" class="modal-overlay" onclick="if(event.target===this) closeProductModal()">
-            <div class="modal-content">
+            <div class="modal-content" style="max-width:550px;">
                 <h3>✏️ Редактировать</h3>
-                <div class="form-group"><label>Название</label><input type="text" id="prodName" value="${p.name.replace(/"/g,'&quot;')}"></div>
-                <div class="form-row">
-                    <div class="form-group" style="flex:2;"><label>Количество</label><input type="number" id="prodAmount" value="${p.amount}" min="0" step="0.01"></div>
-                    <div class="form-group" style="flex:1;"><label>Ед.</label><select id="prodUnit">
-                        <option ${p.unit==='г'?'selected':''}>г</option><option ${p.unit==='кг'?'selected':''}>кг</option>
-                        <option ${p.unit==='мл'?'selected':''}>мл</option><option ${p.unit==='л'?'selected':''}>л</option>
-                        <option ${p.unit==='шт'?'selected':''}>шт</option><option ${p.unit==='банка'?'selected':''}>банка</option>
-                        <option ${p.unit==='упаковка'?'selected':''}>упаковка</option>
-                    </select></div>
+                
+                <div class="form-group">
+                    <label>Название</label>
+                    <input type="text" id="prodName" value="${p.name.replace(/"/g,'&quot;')}">
                 </div>
-                <div class="form-group"><label>Категория</label><select id="prodCat">${catsHtml}</select></div>
+                
+                <div class="form-row">
+                    <div class="form-group" style="flex:1.5;">
+                        <label>Количество</label>
+                        <input type="number" id="prodAmount" value="${p.amount}" min="0" step="0.01">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Ед. измерения</label>
+                        <select id="prodUnit">
+                            <option ${p.unit==='г'?'selected':''}>г</option>
+                            <option ${p.unit==='кг'?'selected':''}>кг</option>
+                            <option ${p.unit==='мл'?'selected':''}>мл</option>
+                            <option ${p.unit==='л'?'selected':''}>л</option>
+                            <option ${p.unit==='шт'?'selected':''}>шт</option>
+                            <option ${p.unit==='банка'?'selected':''}>банка</option>
+                            <option ${p.unit==='упаковка'?'selected':''}>упаковка</option>
+                            <option ${p.unit==='пакет'?'selected':''}>пакет</option>
+                            <option ${p.unit==='пучок'?'selected':''}>пучок</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1.5;">
+                        <label>Вес 1 ед. (г)</label>
+                        <input type="number" id="prodUnitWeight" value="${p.unitWeight || 0}" min="0" step="1">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Категория</label>
+                    <select id="prodCat">${catsHtml}</select>
+                </div>
+                
                 <div class="checkboxes">
-                    <label class="checkbox-label"><input type="checkbox" id="prodOpened" ${p.isOpened?'checked':''}> Начато</label>
+                    <label class="checkbox-label"><input type="checkbox" id="prodOpened" ${p.isOpened?'checked':''}> Начато / открыто</label>
                     <label class="checkbox-label"><input type="checkbox" id="prodFrozen" ${p.isFrozen?'checked':''}> ❄️ Морозильник</label>
                 </div>
+                
                 <div class="modal-actions">
                     <button class="primary-btn" onclick="saveEditedProduct('${p.id}')">💾 Сохранить</button>
                     <button class="secondary-btn" onclick="closeProductModal()">Отмена</button>
@@ -111,9 +177,7 @@ function openEditProductModal(productId) {
     document.body.insertAdjacentHTML('beforeend', html);
 }
 
-function closeProductModal() { 
-    document.getElementById('productModal')?.remove(); 
-}
+function closeProductModal() { document.getElementById('productModal')?.remove(); }
 
 // ============================================
 // СОХРАНЕНИЕ
@@ -127,19 +191,17 @@ async function saveNewProduct() {
     if (isNaN(amount) || amount < 0) { alert('Введи количество'); return; }
     
     const product = {
-        name: name,
-        amount: amount,
+        name, amount,
         unit: document.getElementById('prodUnit').value,
+        unitWeight: parseFloat(document.getElementById('prodUnitWeight').value) || 0,
+        weightUnit: 'г',
         category: document.getElementById('prodCat').value,
-        weight: 0,
-        weightUnit: '',
         isOpened: document.getElementById('prodOpened').checked,
         isFrozen: document.getElementById('prodFrozen').checked
     };
     
     await dbSaveProduct(product);
     appData.products = await dbGetAllProducts();
-    
     closeProductModal();
     showProductsTab();
 }
@@ -151,13 +213,13 @@ async function saveEditedProduct(productId) {
     p.name = document.getElementById('prodName').value.trim();
     p.amount = parseFloat(document.getElementById('prodAmount').value) || 1;
     p.unit = document.getElementById('prodUnit').value;
+    p.unitWeight = parseFloat(document.getElementById('prodUnitWeight').value) || 0;
     p.category = document.getElementById('prodCat').value;
     p.isOpened = document.getElementById('prodOpened').checked;
     p.isFrozen = document.getElementById('prodFrozen').checked;
     
     await dbSaveProduct(p);
     appData.products = await dbGetAllProducts();
-    
     closeProductModal();
     showProductsTab();
 }

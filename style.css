@@ -981,3 +981,11 @@ h3 { font-size: 1.3rem; font-weight: 500; color: var(--color-plum); letter-spaci
     .quick-actions-grid { grid-template-columns: 1fr; }
     .products-table { font-size: 0.8rem; }
 }
+.category-weight {
+    margin-left: var(--spacing-sm);
+    padding: 3px 12px;
+    background: var(--color-olive);
+    color: white;
+    font-size: 0.75rem;
+    clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
+}
