@@ -4,15 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🍽️ Мой планировщик меню</title>
-    <link rel="stylesheet" href="style.css?v=6">
-    
-    <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Планировщик">
-    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
-    <meta name="theme-color" content="#D47B5A">
+    <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
     <div class="app-container">
@@ -27,43 +19,29 @@
                 </label>
             </div>
         </div>
-        
         <div class="tabs">
             <button class="tab active" onclick="showTab('menu')">📅 Меню</button>
             <button class="tab" onclick="showTab('products')">📦 Продукты</button>
             <button class="tab" onclick="showTab('shopping')">🛒 Покупки</button>
             <button class="tab" onclick="showTab('stats')">📊 Статистика</button>
         </div>
-        
         <div id="content" class="content"></div>
     </div>
 
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script>
-        firebase.initializeApp({
-            apiKey: "AIzaSyCBmU1KimDDdMnfdQ8bhPS5X9l0AViF1jk",
-            authDomain: "meal-planner-826fb.firebaseapp.com",
-            projectId: "meal-planner-826fb",
-            storageBucket: "meal-planner-826fb.firebasestorage.app",
-            messagingSenderId: "56628172488",
-            appId: "1:56628172488:web:803d2794038d61cc47f7fd"
-        });
+        firebase.initializeApp({apiKey:"AIzaSyCBmU1KimDDdMnfdQ8bhPS5X9l0AViF1jk",authDomain:"meal-planner-826fb.firebaseapp.com",projectId:"meal-planner-826fb",storageBucket:"meal-planner-826fb.firebasestorage.app",messagingSenderId:"56628172488",appId:"1:56628172488:web:803d2794038d61cc47f7fd"});
         window.firebaseDB = firebase.firestore();
-        console.log('🔥 Firebase готов');
     </script>
-
-    <script src="js/firebase-db.js?v=6"></script>
-    <script src="js/app.js?v=6"></script>
-    <script src="js/products/products.js?v=6"></script>
-    <script src="js/menu/menu-components.js?v=6"></script>
-    <script src="js/menu/menu-ratings.js?v=6"></script>
-    <script src="js/menu/menu-subtract.js?v=6"></script>
-    <script src="js/menu/menu.js?v=6"></script>
-    <script src="js/stats/stats.js?v=6"></script>
-    <script src="js/shopping/shopping.js?v=6"></script>
-    
-
+    <script src="js/firebase-db.js?v=10"></script>
+    <script src="js/app.js?v=10"></script>
+    <script src="js/products/products.js?v=10"></script>
+    <script src="js/menu/menu-components.js?v=10"></script>
+    <script src="js/menu/menu-ratings.js?v=10"></script>
+    <script src="js/menu/menu-subtract.js?v=10"></script>
+    <script src="js/menu/menu.js?v=10"></script>
+    <script src="js/stats/stats.js?v=10"></script>
+    <script src="js/shopping/shopping.js?v=10"></script>
 </body>
 </html>
