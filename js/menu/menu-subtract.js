@@ -124,21 +124,91 @@ function removeSubtractItem(i) { if(currentSubtractData){currentSubtractData.ite
 
 async function markAsCooked(mealInfo) {
     if (!mealInfo) return;
-    const fullMeal = appData.parsedMenu?.find(m => m.day === mealInfo.day && m.meal === mealInfo.meal && m.title === mealInfo.title);
-    if (!fullMeal) return;
-    if (fullMeal.cooked) { alert('Уже приготовлено'); return; }
-    const data = prepareSubtractData(mealInfo);
-    if (!data.items.length) { fullMeal.cooked = true; await dbSaveMenu(appData.parsedMenu, appData.weekStartDate); displayMenu(appData.parsedMenu); return; }
+    
+    // Нормализуем день недели (Пн -> Понедельник)
+    const dayMap = {
+        'Пн': 'Понедельник', 'Понедельник': 'Понедельник',
+        'Вт': 'Вторник', 'Вторник': 'Вторник',
+        'Ср': 'Среда', 'Среда': 'Среда',
+        'Чт': 'Четверг', 'Четверг': 'Четверг',
+        'Пт': 'Пятница', 'Пятница': 'Пятница',
+        'Сб': 'Суббота', 'Суббота': 'Суббота',
+        'Вс': 'Воскресенье', 'Воскресенье': 'Воскресенье'
+    };
+    
+    const normalizedDay = dayMap[mealInfo.day] || mealInfo.day;
+    
+    const fullMeal = appData.parsedMenu?.find(m => 
+        m.day === mealInfo.day && m.meal === mealInfo.meal && m.title === mealInfo.title
+    ) || appData.parsedMenu?.find(m => 
+        m.day === normalizedDay && m.meal === mealInfo.meal && m.title === mealInfo.title
+    );
+    
+    if (!fullMeal) {
+        console.error('Блюдо не найдено:', mealInfo);
+        alert('Блюдо не найдено в меню');
+        return;
+    }
+    
+    if (fullMeal.cooked) { 
+        alert('Уже приготовлено'); 
+        return; 
+    }
+    
+    const data = prepareSubtractData({...mealInfo, day: fullMeal.day});
+    if (!data.items.length) { 
+        fullMeal.cooked = true; 
+        fullMeal.cookedDate = new Date().toISOString();
+        await dbSaveMenu(appData.parsedMenu, appData.weekStartDate); 
+        displayMenu(appData.parsedMenu); 
+        return; 
+    }
+    
     showSubtractConfirmModal(data);
 }
 
 function markAsCookedAndRate(mealInfo, liked) {
     if (!mealInfo) return;
-    const fullMeal = appData.parsedMenu?.find(m => m.day === mealInfo.day && m.meal === mealInfo.meal && m.title === mealInfo.title);
-    if (!fullMeal) return;
-    if (fullMeal.cooked) { if (typeof openRatingModal === 'function') openRatingModal(mealInfo, liked); return; }
-    const data = prepareSubtractData(mealInfo);
-    if (!data.items.length) { fullMeal.cooked = true; dbSaveMenu(appData.parsedMenu, appData.weekStartDate); displayMenu(appData.parsedMenu); if (typeof openRatingModal === 'function') openRatingModal(mealInfo, liked); return; }
+    
+    const dayMap = {
+        'Пн': 'Понедельник', 'Понедельник': 'Понедельник',
+        'Вт': 'Вторник', 'Вторник': 'Вторник',
+        'Ср': 'Среда', 'Среда': 'Среда',
+        'Чт': 'Четверг', 'Четверг': 'Четверг',
+        'Пт': 'Пятница', 'Пятница': 'Пятница',
+        'Сб': 'Суббота', 'Суббота': 'Суббота',
+        'Вс': 'Воскресенье', 'Воскресенье': 'Воскресенье'
+    };
+    
+    const normalizedDay = dayMap[mealInfo.day] || mealInfo.day;
+    
+    const fullMeal = appData.parsedMenu?.find(m => 
+        m.day === mealInfo.day && m.meal === mealInfo.meal && m.title === mealInfo.title
+    ) || appData.parsedMenu?.find(m => 
+        m.day === normalizedDay && m.meal === mealInfo.meal && m.title === mealInfo.title
+    );
+    
+    if (!fullMeal) { 
+        console.error('Блюдо не найдено:', mealInfo);
+        alert('Блюдо не найдено в меню'); 
+        return; 
+    }
+    
+    if (fullMeal.cooked) { 
+        if (typeof openRatingModal === 'function') openRatingModal(mealInfo, liked); 
+        return; 
+    }
+    
+    const data = prepareSubtractData({...mealInfo, day: fullMeal.day});
+    if (!data.items.length) { 
+        fullMeal.cooked = true; 
+        fullMeal.cookedDate = new Date().toISOString();
+        dbSaveMenu(appData.parsedMenu, appData.weekStartDate); 
+        displayMenu(appData.parsedMenu); 
+        if (typeof openRatingModal === 'function') openRatingModal(mealInfo, liked); 
+        return; 
+    }
+    
     pendingRating = { mealInfo, liked };
     showSubtractConfirmModal(data);
 }
