@@ -989,3 +989,72 @@ h3 { font-size: 1.3rem; font-weight: 500; color: var(--color-plum); letter-spaci
     font-size: 0.75rem;
     clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
 }
+/* НОВЫЕ КНОПКИ МЕНЮ */
+.menu-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: var(--spacing-lg);
+    align-items: center;
+}
+
+.cook-btn-main {
+    background: linear-gradient(135deg, var(--color-terracotta) 0%, #E8907A 100%);
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+    box-shadow: 0 4px 12px rgba(212, 123, 90, 0.3);
+    transition: all 0.3s ease;
+    flex: 2;
+}
+.cook-btn-main:hover {
+    background: linear-gradient(135deg, var(--color-wine) 0%, #8B4550 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 18px rgba(114, 47, 55, 0.3);
+}
+
+.rate-btn {
+    background: var(--color-olive);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+    transition: all 0.2s;
+}
+.rate-btn:hover { background: #6B7A4A; transform: scale(1.05); }
+.rate-btn.dislike { background: var(--color-wine); }
+.rate-btn.dislike:hover { background: #8B4550; }
+
+.delete-meal-btn-new {
+    background: transparent;
+    border: 1.5px solid var(--color-wine);
+    color: var(--color-wine);
+    padding: 10px 16px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+    transition: all 0.2s;
+    margin-left: auto;
+}
+.delete-meal-btn-new:hover {
+    background: var(--color-wine);
+    color: white;
+}
+
+.meal-status {
+    padding: 4px 14px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
+}
+.meal-status.done { background: var(--color-olive); color: white; }
+.meal-status.done-liked { background: var(--color-olive); color: white; }
+.meal-status.done-disliked { background: var(--color-wine); color: white; }
