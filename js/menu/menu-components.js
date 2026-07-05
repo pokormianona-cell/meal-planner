@@ -164,8 +164,15 @@ function getLastWeekMenu() {
 }
 
 function generatePrompt() {
-    if (!appData.userHeight || !appData.userWeight || !appData.userCalories) { alert('⚠️ Заполни параметры'); return null; }
-    if (!appData.selectedMeals?.length) { alert('⚠️ Выбери приёмы'); return null; }
+    if (!appData.userHeight || !appData.userWeight || !appData.userCalories) { 
+        alert('⚠️ Заполни параметры'); 
+        return null; 
+    }
+    if (!appData.selectedMeals?.length) { 
+        alert('⚠️ Выбери приёмы'); 
+        return null; 
+    }
+    
     var productsList = appData.products.map(function(p) {
         var notes = [];
         if (p.isOpened) notes.push('ОТКРЫТО');
@@ -174,12 +181,18 @@ function generatePrompt() {
         if (p.isOpened && (p.category==='dairy'||p.category==='meat') && !p.isFrozen) notes.push('СКОРОПОРТ');
         return '- ' + p.name + ': ' + p.amount + ' ' + p.unit + (notes.length ? ' ['+notes.join('|')+']' : '');
     }).join('\n');
-    var selectedDaysList = appData.selectedMeals.map(function(m) { return DAYS[m.day] + ' (' + formatDateForDay(m.day, 'full') + ') - ' + MEALS[m.meal]; }).join('\n');
+    
+    var selectedDaysList = appData.selectedMeals.map(function(m) { 
+        return DAYS[m.day] + ' (' + formatDateForDay(m.day, 'full') + ') - ' + MEALS[m.meal]; 
+    }).join('\n');
+    
     var dailyCalories = parseInt(appData.userCalories) || 1650;
     var remainingCalories = dailyCalories - 140;
-    var bCal = Math.round(remainingCalories * 0.25), lCal = Math.round(remainingCalories * 0.40), dCal = Math.round(remainingCalories * 0.35);
-    return 'Привет! Ты - шеф-повар мирового уровня вроде Джейми Оливера и Гордона Рамзи. Ты считаешь что все имеют право питаться вкусно и здорово, даже если не умеют готовить на твоем уровне. Составь меню на ' + getWeekDateRange() + '.\n\n=== ПРОДУКТЫ (бери в расчет именно этот список!) ===\n' + productsList + '\n\n' + getMealPreferencesForPrompt() + '\n\n=== НУЖНО МЕНЮ ===\n' + selectedDaysList + '\n' + getLastWeekMenu() + '\n\n=== ОБО МНЕ ===\nЖенщина, ' + appData.userHeight + 'см/' + appData.userWeight + 'кг, ' + dailyCalories + 'ккал/день (вкл. колу 140).\nЗавтрак ~' + bCal + 'ккал, Обед ~' + lCal + 'ккал, Ужин ~' + dCal + 'ккал.\nЗавтраки быстрые, в обеде/ужине белок. Хлеб не покупаю. Я НЕ ЛЮБЛЮ СМУЗИ И БОУЛЫ. \nАэрогриль, вафельница, плита, духовка, блендер, вакууматор и СУВИД. Делай акцент на интересные и разнообразные рецепты, позволяющие сохранять КБЖУ. \n\n=== ФОРМАТ JSON ===\n[{"day":"Пн","meal":"Завтрак","title":"...","recipe":["..."],"ingredients":[{"name":"...","amount":"100г","kcal":120,"protein":10,"fat":5,"carbs":8}],"total":{"kcal":' + bCal + ',"protein":30,"fat":20,"carbs":50}}]';
+    var bCal = Math.round(remainingCalories * 0.25);
+    var lCal = Math.round(remainingCalories * 0.40);
+    var dCal = Math.round(remainingCalories * 0.35);
     
+    return 'Привет! Ты - шеф-повар мирового уровня вроде Джейми Оливера и Гордона Рамзи. Ты считаешь что все имеют право питаться вкусно и здорово, даже если не умеют готовить на твоем уровне. Составь меню на ' + getWeekDateRange() + '.\n\n=== ПРОДУКТЫ (бери в расчет именно этот список!) ===\n' + productsList + '\n\n=== НУЖНО МЕНЮ ===\n' + selectedDaysList + '\n\n=== ОБО МНЕ ===\nЖенщина, ' + appData.userHeight + 'см/' + appData.userWeight + 'кг, ' + dailyCalories + 'ккал/день (вкл. колу 140).\nЗавтрак ~' + bCal + 'ккал, Обед ~' + lCal + 'ккал, Ужин ~' + dCal + 'ккал.\nЗавтраки быстрые, в обеде/ужине белок. Хлеб не покупаю. Я НЕ ЛЮБЛЮ СМУЗИ И БОУЛЫ.\nАэрогриль, вафельница, плита, духовка, блендер, вакууматор и СУВИД. Делай акцент на интересные и разнообразные рецепты, позволяющие сохранять КБЖУ.\n\n=== ФОРМАТ JSON ===\n[{"day":"Пн","meal":"Завтрак","title":"...","recipe":["..."],"ingredients":[{"name":"...","amount":"100г","kcal":120,"protein":10,"fat":5,"carbs":8}],"total":{"kcal":' + bCal + ',"protein":30,"fat":20,"carbs":50}}]';
 }
 
 function generatePromptAndCopy() {
