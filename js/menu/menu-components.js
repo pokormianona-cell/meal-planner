@@ -1,5 +1,6 @@
 /*
    menu-components.js - две кнопки: Приготовить (с оценкой) и Удалить
+   Неделя с воскресенья, промт без статистики
 */
 
 let selectedMealsForRegenerate = new Set();
@@ -7,10 +8,10 @@ let reworkReasons = {};
 let collapsedDays = new Set();
 
 function showMenuTab() {
-    const content = document.getElementById('content');
+    var content = document.getElementById('content');
     if (!appData.weekStartDate) setWeekToCurrent();
-    const weekRange = getWeekDateRange();
-    const pickerDate = getDateForPicker();
+    var weekRange = getWeekDateRange();
+    var pickerDate = getDateForPicker();
     
     var html = '<h2>📅 Меню на неделю</h2>';
     
@@ -103,19 +104,42 @@ function toggleDayAllMeals(dayIndex) {
 function renderTodayStats() {
     var today = new Date();
     var dayOfWeek = today.getDay();
-    var dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    var todayName = DAYS[dayIndex];
+    var todayName = DAYS[dayOfWeek];
+    
     var todayMeals = appData.parsedMenu ? appData.parsedMenu.filter(function(m) { return m.day === todayName; }) : [];
+    
     if (!todayMeals.length) return '<p class="empty-stats">На сегодня меню не запланировано</p>';
+    
     var totalKcal = 0, totalProtein = 0, totalFat = 0, totalCarbs = 0;
-    todayMeals.forEach(function(m) { if(m.total) { totalKcal += m.total.kcal||0; totalProtein += m.total.protein||0; totalFat += m.total.fat||0; totalCarbs += m.total.carbs||0; } });
+    todayMeals.forEach(function(m) { 
+        if(m.total) { 
+            totalKcal += m.total.kcal||0; 
+            totalProtein += m.total.protein||0; 
+            totalFat += m.total.fat||0; 
+            totalCarbs += m.total.carbs||0; 
+        } 
+    });
+    
     var cookedCount = todayMeals.filter(function(m) { return m.cooked; }).length;
     var targetKcal = (parseInt(appData.userCalories) || 1650) - 140;
     var progress = Math.min(100, Math.round((totalKcal / targetKcal) * 100));
+    
     var listHtml = todayMeals.map(function(m) {
-        return '<div class="today-meal-item' + (m.cooked?' cooked':'') + '"><span class="today-meal-type">' + m.meal + '</span><span class="today-meal-title">' + m.title + '</span><span class="today-meal-kcal">' + (m.total?.kcal||0) + ' ккал</span>' + (m.cooked?'<span class="cooked-check">✅</span>':'') + '</div>';
+        return '<div class="today-meal-item' + (m.cooked?' cooked':'') + '">' +
+            '<span class="today-meal-type">' + m.meal + '</span>' +
+            '<span class="today-meal-title">' + m.title + '</span>' +
+            '<span class="today-meal-kcal">' + (m.total?.kcal||0) + ' ккал</span>' +
+            (m.cooked?'<span class="cooked-check">✅</span>':'') +
+            '</div>';
     }).join('');
-    return '<div class="today-meals-list">' + listHtml + '</div><div class="today-summary"><div class="today-summary-row"><span>Всего:</span><strong>' + totalKcal + ' / ' + targetKcal + ' ккал</strong></div><div class="progress-bar"><div class="progress-fill" style="width:' + progress + '%;"></div></div><div class="today-summary-row"><span>Б: ' + totalProtein + 'г</span><span>Ж: ' + totalFat + 'г</span><span>У: ' + totalCarbs + 'г</span></div><div class="today-summary-row"><span>🍳 ' + cookedCount + '/' + todayMeals.length + '</span></div></div>';
+    
+    return '<div class="today-meals-list">' + listHtml + '</div>' +
+        '<div class="today-summary">' +
+        '<div class="today-summary-row"><span>Всего:</span><strong>' + totalKcal + ' / ' + targetKcal + ' ккал</strong></div>' +
+        '<div class="progress-bar"><div class="progress-fill" style="width:' + progress + '%;"></div></div>' +
+        '<div class="today-summary-row"><span>Б: ' + totalProtein + 'г</span><span>Ж: ' + totalFat + 'г</span><span>У: ' + totalCarbs + 'г</span></div>' +
+        '<div class="today-summary-row"><span>🍳 ' + cookedCount + '/' + todayMeals.length + '</span></div>' +
+        '</div>';
 }
 
 function isDayMealSelected(di, mi) { return (appData.selectedMeals || []).some(function(m) { return m.day === di && m.meal === mi; }); }
@@ -130,37 +154,14 @@ async function toggleDayMeal(di, mi) {
 
 async function selectAllMeals() { appData.selectedMeals = []; for (var d=0; d<7; d++) Object.keys(MEALS).forEach(function(m) { appData.selectedMeals.push({day:d, meal:m}); }); await dbSaveSetting('selectedMeals', appData.selectedMeals); showMenuTab(); }
 async function clearAllMeals() { appData.selectedMeals = []; await dbSaveSetting('selectedMeals', appData.selectedMeals); showMenuTab(); }
-async function selectWeekdays() { appData.selectedMeals = []; for (var d=0; d<5; d++) Object.keys(MEALS).forEach(function(m) { appData.selectedMeals.push({day:d, meal:m}); }); await dbSaveSetting('selectedMeals', appData.selectedMeals); showMenuTab(); }
-async function selectWeekends() { appData.selectedMeals = []; for (var d=5; d<7; d++) Object.keys(MEALS).forEach(function(m) { appData.selectedMeals.push({day:d, meal:m}); }); await dbSaveSetting('selectedMeals', appData.selectedMeals); showMenuTab(); }
+async function selectWeekdays() { appData.selectedMeals = []; for (var d=1; d<6; d++) Object.keys(MEALS).forEach(function(m) { appData.selectedMeals.push({day:d, meal:m}); }); await dbSaveSetting('selectedMeals', appData.selectedMeals); showMenuTab(); }
+async function selectWeekends() { appData.selectedMeals = []; Object.keys(MEALS).forEach(function(m) { appData.selectedMeals.push({day:0, meal:m}); appData.selectedMeals.push({day:6, meal:m}); }); await dbSaveSetting('selectedMeals', appData.selectedMeals); showMenuTab(); }
 
 async function saveUserParams() {
     appData.userHeight = document.getElementById('userHeight').value;
     appData.userWeight = document.getElementById('userWeight').value;
     appData.userCalories = document.getElementById('userCalories').value;
     await saveAppDataToDB();
-}
-
-function getMealPreferencesForPrompt() {
-    if (!appData.mealRatings || !Object.keys(appData.mealRatings).length) return '';
-    var loved = [], hated = [];
-    Object.entries(appData.mealRatings).forEach(function(e) {
-        var title = e[0], data = e[1];
-        if (data.liked > data.disliked) loved.push({title:title, liked:data.liked, disliked:data.disliked, tags:data.tags||[], comments:data.comments||''});
-        else if (data.disliked > data.liked) hated.push({title:title, liked:data.liked, disliked:data.disliked, tags:data.tags||[], comments:data.comments||''});
-    });
-    var text = '';
-    if (loved.length) { text += '\n🍽️ ЛЮБИМЫЕ БЛЮДА:\n'; loved.sort(function(a,b){return b.liked-a.liked}); loved.forEach(function(m){ var tt=m.tags.length?' [теги: '+m.tags.join(', ')+']':''; var ct=m.comments?'\n  💬 "'+m.comments+'"':''; text += '- '+m.title+' — 👍'+m.liked+' 👎'+m.disliked+tt+ct+'\n'; }); text += '→ Предлагай похожие блюда!\n'; }
-    if (hated.length) { text += '\n🚫 НЕПОНРАВИВШИЕСЯ БЛЮДА:\n'; hated.sort(function(a,b){return b.disliked-a.disliked}); hated.forEach(function(m){ var tt=m.tags.length?' [теги: '+m.tags.join(', ')+']':''; var ct=m.comments?'\n  💬 "'+m.comments+'"':''; text += '- '+m.title+' — 👍'+m.liked+' 👎'+m.disliked+tt+ct+'\n'; }); text += '→ Избегай этих проблем!\n'; }
-    return text;
-}
-
-function getLastWeekMenu() {
-    if (!appData.menuHistory?.length) return '';
-    var lastMenu = appData.menuHistory[appData.menuHistory.length-1];
-    if (!lastMenu?.menu) return '';
-    var text = '\n📋 ПРОШЛАЯ НЕДЕЛЯ:\n';
-    lastMenu.menu.forEach(function(item) { text += '- ' + item.day + ' ' + item.meal + ': ' + item.title + '\n'; });
-    return text;
 }
 
 function generatePrompt() {
@@ -329,7 +330,6 @@ function generateReplacementPrompt() {
     generateReworkPrompt();
 }
 
-// НОВАЯ ФУНКЦИЯ ДЛЯ КНОПКИ "ПРИГОТОВИТЬ" С ПОСЛЕДУЮЩЕЙ ОЦЕНКОЙ
 function markAsCookedAndRate(mealInfo, liked) {
     if (!mealInfo) return;
     var fullMeal = (appData.parsedMenu || []).find(function(m) { return m.day === mealInfo.day && m.meal === mealInfo.meal && m.title === mealInfo.title; });
