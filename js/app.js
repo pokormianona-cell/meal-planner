@@ -4,7 +4,7 @@
 */
 
 const appData = {
-    currentTab: 'products',
+    currentTab: 'today',
     products: [],
     weeklyMenu: [],
     shoppingList: [],
@@ -192,9 +192,10 @@ function showTab(tabName) {
     appData.currentTab = tabName;
     document.querySelectorAll('.tab').forEach(function(tab) {
         tab.classList.remove('active');
-        var titles = { 'products': 'Продукты', 'menu': 'Меню', 'shopping': 'Покупки', 'stats': 'Статистика' };
+        var titles = { 'today': 'Сегодня', 'products': 'Запасы', 'menu': 'План недели', 'shopping': 'Купить', 'stats': 'Вкусы' };
         if (tab.textContent.includes(titles[tabName] || '')) tab.classList.add('active');
     });
+    if (tabName === 'today' && typeof showTodayTab === 'function') showTodayTab();
     if (tabName === 'products' && typeof showProductsTab === 'function') showProductsTab();
     if (tabName === 'menu' && typeof showMenuTab === 'function') {
         showMenuTab();
@@ -227,5 +228,5 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     await loadMenuForCurrentWeek();
-    showTab('products');
+    showTab('today');
 });

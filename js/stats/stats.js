@@ -7,7 +7,7 @@ let editingMealTitle = null;
 function showStatsTab() {
     const content = document.getElementById('content');
     let html = `
-        <h2>📊 Статистика</h2>
+        <div class="page-intro"><div><h2>♥️ Вкусы и открытия</h2><p>Оценки помогают следующему меню становиться интереснее и точнее.</p></div></div>
         <div class="stats-actions-artdeco">
             <button class="primary-btn" onclick="showAllRatings()">📋 Все оценки</button>
             <button class="olive-btn" onclick="showLovedMeals()">⭐ Любимые</button>

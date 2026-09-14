@@ -4,7 +4,7 @@
 
 function showProductsTab() {
     const content = document.getElementById('content');
-    let html = `<h2>📦 Продукты в наличии</h2><div class="products-actions"><button class="add-btn" onclick="openAddProductModal()">➕ Добавить продукт</button></div>`;
+    let html = `<div class="page-intro"><div><h2>🧺 Запасы</h2><p>Держи продукты в актуальном состоянии — план будет опираться именно на них.</p></div><div class="products-actions"><button class="add-btn" onclick="openAddProductModal()">➕ Добавить продукт</button></div></div>`;
     categories.forEach(cat => {
         const prods = getProductsByCategory(cat.id);
         const totalWeight = prods.reduce((sum, p) => {

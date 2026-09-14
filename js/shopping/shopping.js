@@ -5,7 +5,7 @@
 function showShoppingTab() {
     const content = document.getElementById('content');
     let html = `
-        <h2>🛒 Список покупок</h2>
+        <div class="page-intro"><div><h2>🛒 Купить</h2><p>Список собирается из меню и сохраняет всё, что ты добавила вручную.</p></div></div>
         <div class="shopping-actions">
             <button class="primary-btn" onclick="generateShoppingList()">🔄 Сгенерировать</button>
             <button class="olive-btn" onclick="openAddShoppingModal()">✏️ Добавить</button>

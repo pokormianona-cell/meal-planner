@@ -22,10 +22,11 @@
             </div>
         </div>
         <div class="tabs">
-            <button class="tab active" onclick="showTab('menu')">📅 Меню</button>
-            <button class="tab" onclick="showTab('products')">📦 Продукты</button>
-            <button class="tab" onclick="showTab('shopping')">🛒 Покупки</button>
-            <button class="tab" onclick="showTab('stats')">📊 Статистика</button>
+            <button class="tab active" onclick="showTab('today')">☀️ Сегодня</button>
+            <button class="tab" onclick="showTab('menu')">📅 План недели</button>
+            <button class="tab" onclick="showTab('products')">🧺 Запасы</button>
+            <button class="tab" onclick="showTab('shopping')">🛒 Купить</button>
+            <button class="tab" onclick="showTab('stats')">♥️ Вкусы</button>
         </div>
         <div id="content" class="content"></div>
     </div>
@@ -38,6 +39,7 @@
     </script>
     <script src="js/firebase-db.js?v=12"></script>
     <script src="js/app.js?v=12"></script>
+    <script src="js/today.js?v=1"></script>
     <script src="js/products/products.js?v=12"></script>
     <script src="js/menu/menu-components.js?v=12"></script>
     <script src="js/menu/menu-ratings.js?v=12"></script>
