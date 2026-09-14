@@ -9,14 +9,65 @@ function showStatsTab() {
     let html = `
         <div class="page-intro"><div><h2>♥️ Вкусы и открытия</h2><p>Оценки помогают следующему меню становиться интереснее и точнее.</p></div></div>
         <div class="stats-actions-artdeco">
-            <button class="primary-btn" onclick="showAllRatings()">📋 Все оценки</button>
+            <button class="primary-btn" onclick="showRecipeLibrary()">📚 Библиотека блюд</button>
+            <button class="olive-btn" onclick="showCulinaryDiary()">📔 Кулинарный дневник</button>
+            <button class="secondary-btn" onclick="showAllRatings()">📋 Все оценки</button>
             <button class="olive-btn" onclick="showLovedMeals()">⭐ Любимые</button>
             <button class="rose-btn" onclick="showHatedMeals()">👎 Непонравившиеся</button>
-            <button class="secondary-btn" onclick="showMealHistory()">📅 История</button>
         </div>
-        <div id="statsContainer" class="stats-container-artdeco">${renderAllRatings()}</div>
+        <div id="statsContainer" class="stats-container-artdeco"></div>
     `;
     content.innerHTML = html;
+    showRecipeLibrary();
+}
+
+function getRecipeLibrary() {
+    const recipes = new Map();
+    const addRecipe = meal => {
+        if (!meal?.title) return;
+        const key = meal.title.trim().toLocaleLowerCase('ru-RU');
+        if (!recipes.has(key)) recipes.set(key, meal);
+    };
+    (appData.parsedMenu || []).forEach(addRecipe);
+    (appData.menuHistory || []).forEach(record => (record.menu || []).forEach(addRecipe));
+    return Array.from(recipes.values()).sort((a, b) => a.title.localeCompare(b.title, 'ru'));
+}
+
+function getRecipeByTitle(title) {
+    return getRecipeLibrary().find(recipe => recipe.title === title);
+}
+
+function showRecipeLibrary() {
+    const container = document.getElementById('statsContainer');
+    if (!container) return;
+    const recipes = getRecipeLibrary();
+    if (!recipes.length) { container.innerHTML = '<div class="empty-stats">📚 Здесь появятся блюда из созданных меню.</div>'; return; }
+    container.innerHTML = '<div class="library-heading"><div><h3>📚 Библиотека блюд</h3><p>Все рецепты, которые уже были в твоём меню.</p></div><span>' + recipes.length + ' блюд</span></div><div class="recipe-library-grid">' + recipes.map(recipe => {
+        const total = recipe.total || {};
+        const rating = appData.mealRatings[recipe.title] || { liked: 0, disliked: 0 };
+        const score = rating.liked + rating.disliked ? Math.round(rating.liked / (rating.liked + rating.disliked) * 100) : null;
+        return '<article class="library-recipe-card"><div class="library-card-top"><span>' + escapeHtml(recipe.meal || 'Блюдо') + '</span><span>' + (Number(total.kcal) || 0) + ' ккал</span></div><h3>' + escapeHtml(recipe.title) + '</h3><div class="library-card-meta"><span>Б ' + (Number(total.protein) || 0) + ' г</span><span>Ж ' + (Number(total.fat) || 0) + ' г</span><span>У ' + (Number(total.carbs) || 0) + ' г</span></div><div class="library-card-footer">' + (score === null ? '<span>ещё без оценки</span>' : '<span>♥ ' + score + '%</span>') + '<button class="small-btn" onclick="openLibraryRecipe(' + inlineArg(recipe.title) + ')">Рецепт</button></div></article>';
+    }).join('') + '</div>';
+}
+
+function openLibraryRecipe(title) {
+    const recipe = getRecipeByTitle(title);
+    if (!recipe) return;
+    const ingredients = (recipe.ingredients || []).map(item => '<li><span>' + escapeHtml(item.name || item.ingredient || '') + '</span><b>' + escapeHtml(item.amount || '') + '</b></li>').join('');
+    const steps = (recipe.recipe || []).map(step => '<li>' + escapeHtml(step) + '</li>').join('');
+    const total = recipe.total || {};
+    const html = '<div class="library-recipe-modal"><span class="library-modal-label">' + escapeHtml(recipe.meal || 'Блюдо') + '</span><h3>' + escapeHtml(recipe.title) + '</h3><div class="library-modal-kbju">🔥 ' + (Number(total.kcal) || 0) + ' · Б ' + (Number(total.protein) || 0) + ' · Ж ' + (Number(total.fat) || 0) + ' · У ' + (Number(total.carbs) || 0) + '</div><div class="library-modal-columns"><div><h4>Ингредиенты</h4><ul>' + ingredients + '</ul></div><div><h4>Как готовить</h4><ol>' + steps + '</ol></div></div><button class="primary-btn" onclick="closeModal()">Закрыть</button></div>';
+    showModal(html);
+}
+
+async function showCulinaryDiary() {
+    const container = document.getElementById('statsContainer');
+    if (!container) return;
+    container.innerHTML = '<div class="empty-stats">Загружаю дневник…</div>';
+    const entries = await dbGetAllRatings();
+    if (!entries.length) { container.innerHTML = '<div class="empty-stats">📔 Приготовь блюдо и оставь впечатление — так начнётся твой кулинарный дневник.</div>'; return; }
+    entries.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    container.innerHTML = '<div class="library-heading"><div><h3>📔 Кулинарный дневник</h3><p>Впечатления, открытия и заметки после готовки.</p></div><span>' + entries.length + ' записей</span></div><div class="culinary-diary">' + entries.map(entry => '<article class="diary-entry ' + (entry.liked ? 'liked' : 'disliked') + '"><div class="diary-entry-mark">' + (entry.liked ? '♥' : '✦') + '</div><div class="diary-entry-copy"><div><h3>' + escapeHtml(entry.title) + '</h3><span>' + new Date(entry.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) + ' · ' + escapeHtml(entry.meal || 'блюдо') + '</span></div>' + (entry.tags?.length ? '<div class="diary-tags">' + entry.tags.map(tag => '<span>' + escapeHtml(tag) + '</span>').join('') + '</div>' : '') + (entry.notes ? '<p>' + escapeHtml(entry.notes) + '</p>' : '<p class="diary-empty-note">Без заметки</p>') + '</div><button class="small-btn" onclick="openLibraryRecipe(' + inlineArg(entry.title) + ')">Рецепт</button></article>').join('') + '</div>';
 }
 
 function renderAllRatings() {

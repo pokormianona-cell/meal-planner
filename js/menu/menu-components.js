@@ -279,7 +279,7 @@ function displayMenu(parsedMenu) {
                 
                 html += '<div class="menu-item-wrapper"><div class="menu-item-selector"><input type="checkbox" ' + (isSelected?'checked':'') + ' onchange="toggleMealSelection(' + inlineArg(mealId) + ')"></div>';
                 html += '<div class="menu-item ' + likedClass + ' ' + cookedClass + '">';
-                html += '<div class="menu-item-header"><span class="menu-meal">' + escapeHtml(item.meal) + '</span><span class="menu-title">' + escapeHtml(item.title) + '</span><span class="menu-kcal">' + Number(total.kcal||0) + 'ккал</span>' + statusBadge + '</div>';
+                html += '<div class="menu-item-header"><div class="recipe-card-heading"><span class="menu-meal">' + escapeHtml(item.meal) + '</span><span class="menu-title">' + escapeHtml(item.title) + '</span></div><div class="recipe-card-status"><span class="menu-kcal">' + Number(total.kcal||0) + ' ккал</span>' + statusBadge + '</div></div>';
                 html += '<div class="menu-two-columns"><div class="menu-ingredients"><strong>🥗</strong><ul>' + ingredientsHtml + '</ul></div><div class="menu-recipe"><strong>📝</strong><ol class="recipe-steps">' + recipeHtml + '</ol></div></div>';
                 html += '<div class="menu-kbju"><span>🔥' + (total.kcal||0) + '</span><span>🍗' + (total.protein||0) + '</span><span>🧈' + (total.fat||0) + '</span><span>🍚' + (total.carbs||0) + '</span></div>';
                 
