@@ -1059,28 +1059,17 @@ h3 { font-size: 1.3rem; font-weight: 500; color: var(--color-plum); letter-spaci
 .meal-status.done-liked { background: var(--color-olive); color: white; }
 .meal-status.done-disliked { background: var(--color-wine); color: white; }
 
-/* Bright, playful refresh */
-:root { --color-cream:#fffaf4; --color-terracotta:#ff6b6b; --color-plum:#3b315f; --color-wine:#5d3a8d; --color-gold:#ffd166; --color-olive:#25a18e; --color-text:#2d2a4a; --color-border:#e8def8; --shadow-medium:0 18px 45px rgba(80,58,140,.16); }
-body { background: radial-gradient(circle at 8% 10%,#fff0b8 0 10%,transparent 28%), radial-gradient(circle at 91% 5%,#ffc7d8 0 8%,transparent 25%), linear-gradient(135deg,#fffaf4,#f2efff); font-family:'Montserrat',sans-serif; }
-body::before { display:none; }
-.app-container { border:0; border-radius:32px; background:rgba(255,255,255,.82); padding:32px; box-shadow:var(--shadow-medium); }
-h1,h2,h3,h4,.menu-title,.rating-title { font-family:'Montserrat',sans-serif; letter-spacing:-.03em; text-transform:none; }
-h1 { color:var(--color-plum); font-size:clamp(2rem,5vw,3.2rem); text-align:left; padding:0; margin:0; text-shadow:none; }
-h1::after,h2::before,h2::after { display:none; }
-h2 { color:var(--color-plum); font-size:2rem; margin-bottom:20px; }
-h3 { color:var(--color-plum); }
-.tabs { justify-content:flex-start; gap:8px; border:0; margin:26px 0 20px; padding:0; overflow-x:auto; }
-.tabs::before,.tabs::after { display:none; }
-.tab { border:1px solid transparent; border-radius:999px; background:#f2efff; color:#675e88; padding:10px 16px; font-family:'Montserrat',sans-serif; font-size:.85rem; font-weight:600; letter-spacing:0; text-transform:none; white-space:nowrap; }
-.tab::before { display:none; }
-.tab:hover,.tab.active { color:#fff; background:linear-gradient(135deg,#ff6b6b,#ff8e72); box-shadow:0 6px 16px rgba(255,107,107,.25); }
-.primary-btn,.olive-btn,.plum-btn,.rose-btn,.add-btn,.secondary-btn { border:0; border-radius:14px; clip-path:none; font-family:'Montserrat',sans-serif; font-size:.86rem; letter-spacing:0; text-transform:none; padding:12px 18px; }
-.primary-btn,.add-btn { background:linear-gradient(135deg,#ff6b6b,#ff8e72); }.olive-btn {background:linear-gradient(135deg,#25a18e,#55c7a5)}.plum-btn {background:linear-gradient(135deg,#5d3a8d,#8d6ac8)}.rose-btn {background:linear-gradient(135deg,#ff7096,#ff9eaf)}.secondary-btn {background:#f2efff;color:#3b315f}.primary-btn:hover,.olive-btn:hover,.plum-btn:hover,.rose-btn:hover,.add-btn:hover,.secondary-btn:hover { transform:translateY(-2px); filter:brightness(1.03); }
-.small-btn { border:0; border-radius:10px; clip-path:none; background:#f2efff; color:#3b315f; font-weight:600; text-transform:none; letter-spacing:0; }.small-btn:hover { background:#e5ddff; color:#3b315f; }
-.category-block,.menu-day-block,.shopping-category-artdeco,.rating-item-artdeco,.summary-card { border:1px solid #eee8fb; border-radius:18px; clip-path:none; background:#fff; box-shadow:0 6px 18px rgba(80,58,140,.07); overflow:hidden; }
-.category-header { border:0; background:linear-gradient(90deg,#fff3ec,#fff); padding:16px 20px; }.category-header:hover { background:linear-gradient(90deg,#ffe5dc,#fff); }.category-title,.week-range-display { color:#3b315f; font-family:'Montserrat',sans-serif; letter-spacing:-.02em; }.category-count { background:#ff6b6b; border-radius:999px; clip-path:none; }
-.products-table td { background:#fff; }.products-table tr:hover td { background:#fff7f1; }.products-table th { color:#5d3a8d; font-family:'Montserrat',sans-serif; }
-.week-navigation-row { border:0; justify-content:flex-start; padding:0; }.week-navigation-row::before { display:none; }
-.menu-item { border-radius:16px; border:1px solid #eee8fb; box-shadow:none; }.menu-item-header { background:linear-gradient(90deg,#f9f6ff,#fff); }
-.modal-overlay { background:rgba(45,42,74,.35); }.modal-content { border:0; border-radius:24px; clip-path:none; background:#fff; padding:32px!important; }.modal-content::before { display:none; }.modal-content h3 { font-family:'Montserrat',sans-serif; font-size:1.4rem; color:#3b315f; border:0; text-transform:none; letter-spacing:-.02em; }.modal-content input,.modal-content select,.modal-content textarea { border:1px solid #ddd4f5; border-radius:12px; clip-path:none; }
-@media (max-width:600px) { body{padding:12px}.app-container{padding:20px;border-radius:22px}.tabs{margin-top:20px}.products-table{display:block;overflow-x:auto}.modal-content{padding:24px!important}.modal-content .form-row,.modal-content .checkboxes{flex-direction:column;gap:10px} }
+/* Art-deco palette refinement */
+:root { --color-cream:#f8f0e7; --color-dusty-rose:#bd7b7d; --color-terracotta:#c9694d; --color-plum:#4c3438; --color-wine:#633a42; --color-mustard:#c99a38; --color-gold:#c99a38; --color-olive:#758052; --color-text:#392d2d; --color-border:#d9c5af; }
+body { background:linear-gradient(135deg,#ead8c7 0%,#f8f0e7 48%,#d9c6bc 100%); }
+body::before { opacity:.7; }
+.app-container { border:2px solid var(--color-gold); border-radius:0; background:rgba(248,240,231,.94); box-shadow:0 18px 42px rgba(76,52,56,.18), inset 0 0 0 7px rgba(201,154,56,.12); }
+.app-container::before { content:'✦'; position:absolute; inset:14px auto auto 18px; color:var(--color-gold); font-size:1.1rem; }.app-container::after { content:'✦'; position:absolute; inset:auto 18px 14px auto; color:var(--color-gold); font-size:1.1rem; }
+h1 { color:var(--color-wine); } h1::after { color:var(--color-mustard); } h2::before,h2::after { color:var(--color-mustard); }
+.tabs { border-color:var(--color-mustard); }.tabs::before,.tabs::after { color:var(--color-mustard); }
+.tab.active { color:var(--color-wine); }.tab.active::before,.tab:hover::before { background:var(--color-terracotta); }
+.primary-btn,.add-btn,.cook-btn-main { background:linear-gradient(135deg,#b9533f,#d27a5c); }.primary-btn:hover,.add-btn:hover,.cook-btn-main:hover { background:linear-gradient(135deg,var(--color-wine),#87505a); }
+.olive-btn { background:linear-gradient(135deg,#69754b,#8d9868); }.olive-btn:hover { background:#59663d; }.rose-btn { background:linear-gradient(135deg,#a9676b,#c88c8e); }.secondary-btn { background:linear-gradient(135deg,#c99a38,#dec16c); color:var(--color-plum); }
+.category-block,.menu-day-block,.shopping-category-artdeco,.rating-item-artdeco { border-color:var(--color-gold); border-radius:0; }
+.category-header { background:linear-gradient(90deg,rgba(201,105,77,.14),rgba(201,154,56,.16),transparent); border-color:var(--color-gold); }.category-header:hover { background:linear-gradient(90deg,rgba(201,105,77,.25),rgba(201,154,56,.25),transparent); }
+.category-count { background:var(--color-terracotta); }.modal-content { border-color:var(--color-gold); border-radius:0; background:linear-gradient(145deg,#f8f0e7,#fffaf3); }.modal-overlay { background:rgba(76,52,56,.58); }
