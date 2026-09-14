@@ -34,11 +34,11 @@ function renderAllRatings() {
         const total = data.liked + data.disliked;
         const rating = total > 0 ? Math.round((data.liked / total) * 100) : 0;
         html += `<div class="rating-item-artdeco">
-            <div class="rating-header"><span class="rating-title">${title}</span><span class="rating-score ${rating>=70?'good':(rating<=30?'bad':'neutral')}">${rating}%</span></div>
+            <div class="rating-header"><span class="rating-title">${escapeHtml(title)}</span><span class="rating-score ${rating>=70?'good':(rating<=30?'bad':'neutral')}">${rating}%</span></div>
             <div class="rating-stats"><span>👍 ${data.liked}</span><span>👎 ${data.disliked}</span></div>
             <div class="rating-actions">
-                <button class="small-btn" onclick="viewMealDetails('${title.replace(/'/g,"\\'")}')">🔍</button>
-                <button class="small-btn" onclick="editMealRating('${title.replace(/'/g,"\\'")}')">✏️</button>
+                <button class="small-btn" onclick="viewMealDetails(${inlineArg(title)})">🔍</button>
+                <button class="small-btn" onclick="editMealRating(${inlineArg(title)})">✏️</button>
             </div></div>`;
     });
     return html + '</div>';
@@ -49,21 +49,21 @@ function showLovedMeals() {
     const loved = Object.entries(appData.mealRatings).filter(([_,d]) => d.liked > d.disliked);
     if (!loved.length) { document.getElementById('statsContainer').innerHTML = '<div class="empty-stats">⭐ Пока нет любимых</div>'; return; }
     let html = '<h3>⭐ Любимые</h3><div class="ratings-list-artdeco">';
-    loved.forEach(([t,d]) => html += `<div class="rating-item-artdeco loved"><div class="rating-header"><span class="rating-title">${t}</span><span class="rating-score good">${d.liked}👍</span></div></div>`);
+    loved.forEach(([t,d]) => html += `<div class="rating-item-artdeco loved"><div class="rating-header"><span class="rating-title">${escapeHtml(t)}</span><span class="rating-score good">${d.liked}👍</span></div></div>`);
     document.getElementById('statsContainer').innerHTML = html + '</div>';
 }
 function showHatedMeals() {
     const hated = Object.entries(appData.mealRatings).filter(([_,d]) => d.disliked > d.liked);
     if (!hated.length) { document.getElementById('statsContainer').innerHTML = '<div class="empty-stats">👎 Пока нет нелюбимых</div>'; return; }
     let html = '<h3>👎 Непонравившиеся</h3><div class="ratings-list-artdeco">';
-    hated.forEach(([t,d]) => html += `<div class="rating-item-artdeco hated"><div class="rating-header"><span class="rating-title">${t}</span><span class="rating-score bad">${d.disliked}👎</span></div></div>`);
+    hated.forEach(([t,d]) => html += `<div class="rating-item-artdeco hated"><div class="rating-header"><span class="rating-title">${escapeHtml(t)}</span><span class="rating-score bad">${d.disliked}👎</span></div></div>`);
     document.getElementById('statsContainer').innerHTML = html + '</div>';
 }
 function showMealHistory() {
     if (!appData.menuHistory?.length) { document.getElementById('statsContainer').innerHTML = '<div class="empty-stats">📅 История пуста</div>'; return; }
     let html = '<h3>📅 История меню</h3><div class="history-list-artdeco">';
     [...appData.menuHistory].reverse().forEach(r => {
-        html += `<div class="history-item-artdeco"><div><span class="history-date">${new Date(r.date).toLocaleDateString('ru-RU')}</span></div><button class="small-btn" onclick="viewHistoryDetails(${r.id})">🔍</button></div>`;
+        html += `<div class="history-item-artdeco"><div><span class="history-date">${new Date(r.date).toLocaleDateString('ru-RU')}</span></div><button class="small-btn" onclick="viewHistoryDetails(${inlineArg(r.id)})">🔍</button></div>`;
     });
     document.getElementById('statsContainer').innerHTML = html + '</div>';
 }
@@ -71,9 +71,9 @@ function showMealHistory() {
 async function viewMealDetails(title) {
     const ratings = await dbGetMealRatings(title);
     if (!ratings.length) { alert('Нет данных'); return; }
-    let html = `<div class="meal-details-modal"><h3>${title}</h3>`;
+    let html = `<div class="meal-details-modal"><h3>${escapeHtml(title)}</h3>`;
     ratings.forEach(r => {
-        html += `<div class="history-rating-item ${r.liked?'liked':'disliked'}"><span>${new Date(r.date).toLocaleString('ru-RU')}</span><span>${r.liked?'👍':'👎'}</span><span>Теги: ${r.tags?.join(', ')||'нет'}</span>${r.notes?`<p>📝 ${r.notes}</p>`:''}</div>`;
+        html += `<div class="history-rating-item ${r.liked?'liked':'disliked'}"><span>${new Date(r.date).toLocaleString('ru-RU')}</span><span>${r.liked?'👍':'👎'}</span><span>Теги: ${escapeHtml(r.tags?.join(', ')||'нет')}</span>${r.notes?`<p>📝 ${escapeHtml(r.notes)}</p>`:''}</div>`;
     });
     html += `<button class="primary-btn" onclick="closeModal()">Закрыть</button></div>`;
     showModal(html);
@@ -85,7 +85,7 @@ function viewHistoryDetails(id) {
     let html = `<div class="history-menu-modal"><h3>📅 ${new Date(record.date).toLocaleDateString('ru-RU')}</h3>`;
     const byDay = {};
     record.menu.forEach(m => { if (!byDay[m.day]) byDay[m.day] = []; byDay[m.day].push(m); });
-    Object.keys(byDay).forEach(day => { html += `<h4>${day}</h4>`; byDay[day].forEach(m => html += `<div class="history-meal">${m.meal}: ${m.title}</div>`); });
+    Object.keys(byDay).forEach(day => { html += `<h4>${escapeHtml(day)}</h4>`; byDay[day].forEach(m => html += `<div class="history-meal">${escapeHtml(m.meal)}: ${escapeHtml(m.title)}</div>`); });
     html += `<button class="primary-btn" onclick="closeModal()">Закрыть</button></div>`;
     showModal(html);
 }
@@ -93,7 +93,7 @@ function viewHistoryDetails(id) {
 function editMealRating(title) {
     editingMealTitle = title;
     const stats = appData.mealRatings[title] || { liked: 0, disliked: 0 };
-    const html = `<div id="editRatingModal" class="modal-overlay" onclick="if(event.target===this) closeAllModals()"><div class="modal-content" style="max-width:450px;"><h3>✏️ Изменить оценку</h3><p><strong>${title}</strong></p><p>👍 ${stats.liked} | 👎 ${stats.disliked}</p><button class="like-btn" onclick="window.openAddRatingModal(true)">👍 Понравилось</button><button class="dislike-btn" onclick="window.openAddRatingModal(false)">👎 Не понравилось</button><button class="danger-btn" onclick="resetMealRating()">🗑️ Сбросить</button><button class="secondary-btn" onclick="closeAllModals()">Закрыть</button></div></div>`;
+    const html = `<div id="editRatingModal" class="modal-overlay" onclick="if(event.target===this) closeAllModals()"><div class="modal-content" style="max-width:450px;"><h3>✏️ Изменить оценку</h3><p><strong>${escapeHtml(title)}</strong></p><p>👍 ${stats.liked} | 👎 ${stats.disliked}</p><button class="like-btn" onclick="window.openAddRatingModal(true)">👍 Понравилось</button><button class="dislike-btn" onclick="window.openAddRatingModal(false)">👎 Не понравилось</button><button class="danger-btn" onclick="resetMealRating()">🗑️ Сбросить</button><button class="secondary-btn" onclick="closeAllModals()">Закрыть</button></div></div>`;
     showModal(html);
 }
 
@@ -101,7 +101,7 @@ window.openAddRatingModal = function(liked) {
     if (!editingMealTitle) return;
     const categories = liked ? FEEDBACK_CATEGORIES.POSITIVE : FEEDBACK_CATEGORIES.NEGATIVE;
     let tagsHtml = ''; categories.forEach(t => tagsHtml += `<label class="tag-checkbox"><input type="checkbox" value="${t.id}"><span>${t.name}</span></label>`);
-    const html = `<div id="addRatingModal" class="modal-overlay" onclick="if(event.target===this) closeAllModals()"><div class="modal-content"><h3>${liked?'👍 Что понравилось?':'👎 Что не понравилось?'}</h3><p><strong>${editingMealTitle}</strong></p><div class="rating-tags-list">${tagsHtml}</div><div class="form-group"><label>Заметки</label><textarea id="ratingNotes" rows="3"></textarea></div><div class="modal-actions"><button class="primary-btn" onclick="window.saveManualRating(${liked})">💾 Сохранить</button><button class="secondary-btn" onclick="closeAllModals()">Отмена</button></div></div></div>`;
+    const html = `<div id="addRatingModal" class="modal-overlay" onclick="if(event.target===this) closeAllModals()"><div class="modal-content"><h3>${liked?'👍 Что понравилось?':'👎 Что не понравилось?'}</h3><p><strong>${escapeHtml(editingMealTitle)}</strong></p><div class="rating-tags-list">${tagsHtml}</div><div class="form-group"><label>Заметки</label><textarea id="ratingNotes" rows="3"></textarea></div><div class="modal-actions"><button class="primary-btn" onclick="window.saveManualRating(${liked})">💾 Сохранить</button><button class="secondary-btn" onclick="closeAllModals()">Отмена</button></div></div></div>`;
     document.getElementById('editRatingModal')?.remove();
     showModal(html);
 };

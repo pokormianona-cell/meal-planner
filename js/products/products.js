@@ -35,15 +35,15 @@ function renderProductTable(catId) {
         const unitWeightStr = unitWeight > 0 ? (unitWeight >= 1000 ? (unitWeight/1000).toFixed(1)+' кг' : unitWeight+' г') : '—';
         
         html += `<tr>
-            <td><span class="product-name">${p.name}</span></td>
-            <td>${p.amount} ${p.unit}</td>
+            <td><span class="product-name">${escapeHtml(p.name)}</span></td>
+            <td>${Number(p.amount)} ${escapeHtml(p.unit)}</td>
             <td>${unitWeightStr}</td>
             <td>${totalWeightStr}</td>
-            <td><input type="checkbox" ${p.isOpened?'checked':''} onchange="toggleOpened('${p.id}')"></td>
-            <td><input type="checkbox" ${p.isFrozen?'checked':''} onchange="toggleFrozen('${p.id}')"></td>
+            <td><input type="checkbox" ${p.isOpened?'checked':''} onchange="toggleOpened(${inlineArg(p.id)})"></td>
+            <td><input type="checkbox" ${p.isFrozen?'checked':''} onchange="toggleFrozen(${inlineArg(p.id)})"></td>
             <td class="action-buttons">
-                <button class="action-btn edit" onclick="openEditProductModal('${p.id}')">✏️</button>
-                <button class="action-btn delete" onclick="deleteProduct('${p.id}')">🗑️</button>
+                <button class="action-btn edit" onclick="openEditProductModal(${inlineArg(p.id)})">✏️</button>
+                <button class="action-btn delete" onclick="deleteProduct(${inlineArg(p.id)})">🗑️</button>
             </td>
         </tr>`;
     });
@@ -130,7 +130,7 @@ function openEditProductModal(productId) {
                 
                 <div class="form-group">
                     <label>Название</label>
-                    <input type="text" id="prodName" value="${p.name.replace(/"/g,'&quot;')}">
+                    <input type="text" id="prodName" value="${escapeHtml(p.name)}">
                 </div>
                 
                 <div class="form-row">
@@ -169,7 +169,7 @@ function openEditProductModal(productId) {
                 </div>
                 
                 <div class="modal-actions">
-                    <button class="primary-btn" onclick="saveEditedProduct('${p.id}')">💾 Сохранить</button>
+                    <button class="primary-btn" onclick="saveEditedProduct(${inlineArg(p.id)})">💾 Сохранить</button>
                     <button class="secondary-btn" onclick="closeProductModal()">Отмена</button>
                 </div>
             </div>

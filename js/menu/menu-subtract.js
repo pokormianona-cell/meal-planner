@@ -91,7 +91,7 @@ function renderProductSelect(item, index) {
     Object.keys(cats).sort().forEach(cid => {
         const catName = categories.find(c => c.id === cid)?.name || cid;
         opts += '<optgroup label="' + catName + '">';
-        cats[cid].forEach(p => opts += '<option value="' + p.id + '">' + p.name + ' (' + p.amount + p.unit + ')</option>');
+        cats[cid].forEach(p => opts += '<option value="' + escapeHtml(p.id) + '">' + escapeHtml(p.name) + ' (' + Number(p.amount) + escapeHtml(p.unit) + ')</option>');
         opts += '</optgroup>';
     });
     return '<select onchange="updateProductSelection(' + index + ', this.value)" style="width:100%;">' + opts + '</select>';
@@ -113,7 +113,7 @@ function updateProductSelection(index, val) {
             item.isEnough = p.amount >= item.subtractValue;
             const row = document.querySelector('#subtractRow' + index);
             if (row) { 
-                row.querySelector('.product-cell').innerHTML = p.name + ' (' + p.amount + p.unit + ')'; 
+                row.querySelector('.product-cell').textContent = p.name + ' (' + p.amount + p.unit + ')';
                 row.querySelector('.subtract-cell').innerHTML = item.isEnough ? '<input type="number" value="' + item.subtractValue.toFixed(2) + '" onchange="updateSubtractValue(' + index + ', this.value)" style="width:80px;"> ' + p.unit : '⚠️'; 
             }
         }
@@ -145,11 +145,11 @@ function showSubtractConfirmModal(data) {
     const { mealInfo, items } = data;
     let rows = '';
     items.forEach((item, i) => {
-        const prod = item.found && item.product ? item.productName + ' (' + item.productAmount + item.productUnit + ')' : renderProductSelect(item, i);
+            const prod = item.found && item.product ? escapeHtml(item.productName) + ' (' + Number(item.productAmount) + escapeHtml(item.productUnit) + ')' : renderProductSelect(item, i);
         const sub = item.found && item.product && item.isEnough ? '<input type="number" value="' + item.subtractValue.toFixed(2) + '" onchange="updateSubtractValue(' + i + ', this.value)" style="width:80px;"> ' + item.productUnit : '—';
-        rows += '<tr id="subtractRow' + i + '"><td>' + item.ingredient + '</td><td>' + item.required + '</td><td class="product-cell">' + prod + '</td><td class="subtract-cell">' + sub + '</td><td><button class="delete-meal-btn" onclick="removeSubtractItem(' + i + ')">🗑️</button></td></tr>';
+        rows += '<tr id="subtractRow' + i + '"><td>' + escapeHtml(item.ingredient) + '</td><td>' + escapeHtml(item.required) + '</td><td class="product-cell">' + prod + '</td><td class="subtract-cell">' + sub + '</td><td><button class="delete-meal-btn" onclick="removeSubtractItem(' + i + ')">🗑️</button></td></tr>';
     });
-    const html = '<div id="subtractConfirmModal" class="modal-overlay"><div class="modal-content subtract-modal"><h3>🍳 Списание</h3><p><strong>' + mealInfo.title + '</strong> (' + mealInfo.day + ' • ' + mealInfo.meal + ')</p><div class="subtract-table-container"><table class="subtract-table"><thead><tr><th>Ингредиент</th><th>Нужно</th><th>Продукт</th><th>Списать</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div><button class="secondary-btn" onclick="addCustomItem()" style="width:100%;margin:12px 0;">➕ Добавить</button><div class="modal-actions"><button id="confirmSubtractBtn" class="primary-btn" onclick="confirmSubtract()">✅ Подтвердить</button><button class="secondary-btn" onclick="skipSubtractAndRate()">⏭️ Пропустить</button><button class="secondary-btn" onclick="closeSubtractModal()">❌ Отмена</button></div></div></div>';
+    const html = '<div id="subtractConfirmModal" class="modal-overlay"><div class="modal-content subtract-modal"><h3>🍳 Списание</h3><p><strong>' + escapeHtml(mealInfo.title) + '</strong> (' + escapeHtml(mealInfo.day) + ' • ' + escapeHtml(mealInfo.meal) + ')</p><div class="subtract-table-container"><table class="subtract-table"><thead><tr><th>Ингредиент</th><th>Нужно</th><th>Продукт</th><th>Списать</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div><button class="secondary-btn" onclick="addCustomItem()" style="width:100%;margin:12px 0;">➕ Добавить</button><div class="modal-actions"><button id="confirmSubtractBtn" class="primary-btn" onclick="confirmSubtract()">✅ Подтвердить</button><button class="secondary-btn" onclick="skipSubtractAndRate()">⏭️ Пропустить</button><button class="secondary-btn" onclick="closeSubtractModal()">❌ Отмена</button></div></div></div>';
     document.body.insertAdjacentHTML('beforeend', html);
     updateConfirmButton();
 }
@@ -181,7 +181,12 @@ function addCustomItem() {
     tbody.insertAdjacentHTML('beforeend', '<tr id="subtractRow' + i + '"><td><input type="text" onchange="currentSubtractData.items[' + i + '].ingredient=this.value" style="width:100%;"></td><td><input type="text" onchange="currentSubtractData.items[' + i + '].required=this.value" style="width:100%;"></td><td class="product-cell">' + renderProductSelect(item, i) + '</td><td class="subtract-cell">—</td><td><button class="delete-meal-btn" onclick="removeSubtractItem(' + i + ')">🗑️</button></td></tr>'); 
 }
 
-function removeSubtractItem(i) { if(currentSubtractData){ currentSubtractData.items.splice(i,1); document.querySelector('#subtractRow' + i)?.remove(); updateConfirmButton(); } }
+function removeSubtractItem(i) {
+    if (!currentSubtractData) return;
+    currentSubtractData.items.splice(i, 1);
+    document.getElementById('subtractConfirmModal')?.remove();
+    showSubtractConfirmModal(currentSubtractData);
+}
 
 // ОСНОВНЫЕ ФУНКЦИИ
 async function markAsCooked(mealInfo) {

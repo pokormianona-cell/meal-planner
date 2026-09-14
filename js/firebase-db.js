@@ -88,16 +88,16 @@ async function dbGetAllSettings() {
 async function dbSaveMenu(menuItems, weekStart) {
     const weekKey = weekStart || appData.weekStartDate;
     const menuCopy = menuItems.map(m => ({ ...m, cooked: m.cooked || false, liked: m.liked ?? null }));
-    const existing = await db.collection(COLLECTIONS.MENU_HISTORY).where('weekStart', '==', weekKey).get();
-    if (!existing.empty) {
-        await db.collection(COLLECTIONS.MENU_HISTORY).doc(existing.docs[0].id).update({ menu: menuCopy, date: new Date().toISOString() });
-    } else {
-        await db.collection(COLLECTIONS.MENU_HISTORY).add({ date: new Date().toISOString(), weekStart: weekKey, menu: menuCopy });
-    }
+    await db.collection(COLLECTIONS.MENU_HISTORY).doc(weekKey).set(
+        { date: new Date().toISOString(), weekStart: weekKey, menu: menuCopy }, { merge: true }
+    );
 }
 
 async function dbGetMenuForWeek(weekStart) {
-    const snapshot = await db.collection(COLLECTIONS.MENU_HISTORY).where('weekStart', '==', weekStart).get();
+    const doc = await db.collection(COLLECTIONS.MENU_HISTORY).doc(weekStart).get();
+    if (doc.exists) return doc.data().menu;
+    // Compatibility with records created before weekStart became the document id.
+    const snapshot = await db.collection(COLLECTIONS.MENU_HISTORY).where('weekStart', '==', weekStart).limit(1).get();
     return snapshot.empty ? null : snapshot.docs[0].data().menu;
 }
 
@@ -131,9 +131,11 @@ async function deleteFromStore(collection, id) {
 
 async function clearStore(collection) {
     const snapshot = await db.collection(collection).get();
-    const batch = db.batch();
-    snapshot.docs.forEach(doc => batch.delete(doc.ref));
-    await batch.commit();
+    for (let index = 0; index < snapshot.docs.length; index += 500) {
+        const batch = db.batch();
+        snapshot.docs.slice(index, index + 500).forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+    }
 }
 
 // ИНИЦИАЛИЗАЦИЯ
@@ -201,8 +203,16 @@ async function uploadBackup(file) {
     reader.onload = async (e) => {
         try {
             const data = JSON.parse(e.target.result);
+            if (!data || typeof data !== 'object' || !Array.isArray(data.products) || !Array.isArray(data.menuHistory) || !Array.isArray(data.ratings) || !data.settings || typeof data.settings !== 'object') {
+                throw new Error('Неверный формат бэкапа');
+            }
             if (data.products) { await clearStore(COLLECTIONS.PRODUCTS); await dbSaveManyProducts(data.products); }
             if (data.ratings) { await clearStore(COLLECTIONS.MEAL_RATINGS); for (const r of data.ratings) await db.collection(COLLECTIONS.MEAL_RATINGS).add(r); }
+            await clearStore(COLLECTIONS.MENU_HISTORY);
+            for (const record of data.menuHistory) {
+                if (!record.weekStart || !Array.isArray(record.menu)) throw new Error('Повреждённая запись меню');
+                await db.collection(COLLECTIONS.MENU_HISTORY).doc(record.weekStart).set({ date: record.date || new Date().toISOString(), weekStart: record.weekStart, menu: record.menu });
+            }
             if (data.settings) { for (const [k, v] of Object.entries(data.settings)) await dbSaveSetting(k, v); }
             await loadAllDataToAppData();
             alert('✅ Восстановлено!');

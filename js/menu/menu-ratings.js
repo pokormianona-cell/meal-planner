@@ -19,8 +19,8 @@ function openRatingModal(mealInfo, liked) {
         <div id="ratingModal" class="modal-overlay" onclick="if(event.target===this) closeRatingModal()">
             <div class="modal-content">
                 <h3>${liked ? '👍 Что понравилось?' : '👎 Что не понравилось?'}</h3>
-                <p class="modal-meal-title">${mealInfo.title}</p>
-                <p class="modal-meal-subtitle">${mealInfo.day} • ${mealInfo.meal}</p>
+                <p class="modal-meal-title">${escapeHtml(mealInfo.title)}</p>
+                <p class="modal-meal-subtitle">${escapeHtml(mealInfo.day)} • ${escapeHtml(mealInfo.meal)}</p>
                 <div class="rating-tags-section">
                     <p>Выбери теги:</p>
                     <div class="rating-tags-list">${tagsHtml}</div>

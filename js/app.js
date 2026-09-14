@@ -39,6 +39,22 @@ const MEALS = {
     'dinner': '🥗 Ужин'
 };
 
+// Date-only values must stay in local time: ISO strings shift them in UTC+ zones.
+function formatLocalDate(date) {
+    var year = date.getFullYear();
+    var month = String(date.getMonth() + 1).padStart(2, '0');
+    var day = String(date.getDate()).padStart(2, '0');
+    return year + '-' + month + '-' + day;
+}
+
+function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>'"]/g, function(char) {
+        return { '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char];
+    });
+}
+
+function inlineArg(value) { return escapeHtml(JSON.stringify(value)); }
+
 // ============================================
 // ДАТЫ (НЕДЕЛЯ С ВОСКРЕСЕНЬЯ)
 // ============================================
@@ -78,7 +94,7 @@ function getSundayFromDate(date) {
 }
 
 function getDateForPicker() {
-    if (!appData.weekStartDate) return new Date().toISOString().split('T')[0];
+    if (!appData.weekStartDate) return formatLocalDate(new Date());
     return appData.weekStartDate;
 }
 
@@ -122,19 +138,19 @@ async function switchToWeek(newWeekStart) {
 async function nextWeek() {
     var currentStart = new Date(appData.weekStartDate + 'T00:00:00');
     currentStart.setDate(currentStart.getDate() + 7);
-    await switchToWeek(currentStart.toISOString().split('T')[0]);
+    await switchToWeek(formatLocalDate(currentStart));
 }
 
 async function prevWeek() {
     var currentStart = new Date(appData.weekStartDate + 'T00:00:00');
     currentStart.setDate(currentStart.getDate() - 7);
-    await switchToWeek(currentStart.toISOString().split('T')[0]);
+    await switchToWeek(formatLocalDate(currentStart));
 }
 
 async function setWeekToCurrent() {
     var today = new Date();
     var sunday = getSundayFromDate(today);
-    await switchToWeek(sunday.toISOString().split('T')[0]);
+    await switchToWeek(formatLocalDate(sunday));
 }
 
 async function setWeekFromPicker() {
@@ -142,7 +158,7 @@ async function setWeekFromPicker() {
     if (!picker || !picker.value) return;
     var selectedDate = new Date(picker.value + 'T00:00:00');
     var sunday = getSundayFromDate(selectedDate);
-    await switchToWeek(sunday.toISOString().split('T')[0]);
+    await switchToWeek(formatLocalDate(sunday));
 }
 
 // ============================================
@@ -206,7 +222,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (!appData.weekStartDate) {
         var today = new Date();
         var sunday = getSundayFromDate(today);
-        appData.weekStartDate = sunday.toISOString().split('T')[0];
+        appData.weekStartDate = formatLocalDate(sunday);
         await dbSaveSetting('weekStartDate', appData.weekStartDate);
     }
     

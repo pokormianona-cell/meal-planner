@@ -126,8 +126,8 @@ function renderTodayStats() {
     
     var listHtml = todayMeals.map(function(m) {
         return '<div class="today-meal-item' + (m.cooked?' cooked':'') + '">' +
-            '<span class="today-meal-type">' + m.meal + '</span>' +
-            '<span class="today-meal-title">' + m.title + '</span>' +
+            '<span class="today-meal-type">' + escapeHtml(m.meal) + '</span>' +
+            '<span class="today-meal-title">' + escapeHtml(m.title) + '</span>' +
             '<span class="today-meal-kcal">' + (m.total?.kcal||0) + ' ккал</span>' +
             (m.cooked?'<span class="cooked-check">✅</span>':'') +
             '</div>';
@@ -219,7 +219,14 @@ async function parseClaudeResponse() {
         var s = j.indexOf('['), e = j.lastIndexOf(']');
         if (s === -1 || e === -1) throw new Error('JSON не найден');
         var menu = JSON.parse(j.substring(s, e+1));
-        menu.forEach(function(m) { m.cooked = m.cooked || false; m.liked = m.liked != null ? m.liked : null; });
+        var dayAliases = { 'Вс':'Воскресенье', 'Воскресенье':'Воскресенье', 'Пн':'Понедельник', 'Понедельник':'Понедельник', 'Вт':'Вторник', 'Вторник':'Вторник', 'Ср':'Среда', 'Среда':'Среда', 'Чт':'Четверг', 'Четверг':'Четверг', 'Пт':'Пятница', 'Пятница':'Пятница', 'Сб':'Суббота', 'Суббота':'Суббота' };
+        if (!Array.isArray(menu)) throw new Error('Ожидался массив блюд');
+        menu.forEach(function(m) {
+            if (!m || !dayAliases[m.day] || !m.meal || !m.title) throw new Error('У блюда не заполнены день, приём пищи или название');
+            m.day = dayAliases[m.day]; m.cooked = Boolean(m.cooked); m.liked = m.liked != null ? Boolean(m.liked) : null;
+            m.recipe = Array.isArray(m.recipe) ? m.recipe : (m.recipe ? [m.recipe] : []);
+            m.ingredients = Array.isArray(m.ingredients) ? m.ingredients : [];
+        });
         appData.parsedMenu = menu;
         await dbSaveMenu(menu, appData.weekStartDate);
         appData.menuHistory = await dbGetMenuHistory();
@@ -250,29 +257,29 @@ function displayMenu(parsedMenu) {
         var dayKbju = calculateDayKbju(day);
         var isCollapsed = collapsedDays.has(day);
         html += '<div class="menu-day-block">';
-        html += '<div class="menu-day-header" onclick="toggleDayCollapse(\'' + day + '\')" style="cursor:pointer;">';
-        html += '<h4 class="menu-day-title">' + (isCollapsed?'▶':'▼') + ' 📌 ' + day + ' <span class="menu-day-date">— ' + formatDateForDay(DAYS.indexOf(day), 'full') + '</span></h4>';
+        html += '<div class="menu-day-header" onclick="toggleDayCollapse(' + inlineArg(day) + ')" style="cursor:pointer;">';
+        html += '<h4 class="menu-day-title">' + (isCollapsed?'▶':'▼') + ' 📌 ' + escapeHtml(day) + ' <span class="menu-day-date">— ' + formatDateForDay(DAYS.indexOf(day), 'full') + '</span></h4>';
         html += '<div class="day-kbju"><span>🔥' + dayKbju.kcal + '</span><span>🍗' + dayKbju.prot + '</span><span>🧈' + dayKbju.fat + '</span><span>🍚' + dayKbju.carb + '</span></div>';
         html += '</div>';
         if (!isCollapsed) {
             menuByDay[day].forEach(function(item) {
-                var mealId = item.day + '_' + item.meal + '_' + item.title.replace(/[^a-zA-Z0-9]/g,'_');
+                var mealId = getMealId(item);
                 var isSelected = selectedMealsForRegenerate.has(mealId);
                 var likedClass = item.liked===true?'liked':(item.liked===false?'disliked':'');
                 var cookedClass = item.cooked?'cooked':'';
-                var recipeHtml = Array.isArray(item.recipe) ? item.recipe.map(function(s){return '<li>'+s+'</li>'}).join('') : '<li>'+item.recipe+'</li>';
-                var ingredientsHtml = item.ingredients ? item.ingredients.map(function(ing){return '<li><span>'+ (ing.name||'') +'</span><span>'+ (ing.amount||'') +'</span><span class="ingredient-kbju">'+ (ing.kcal||0) +'ккал</span></li>'}).join('') : '';
+                var recipeHtml = item.recipe.map(function(step){return '<li>'+escapeHtml(step)+'</li>';}).join('');
+                var ingredientsHtml = item.ingredients.map(function(ing){return '<li><span>'+escapeHtml(ing.name||ing.ingredient||'')+'</span><span>'+escapeHtml(ing.amount||'')+'</span><span class="ingredient-kbju">'+Number(ing.kcal||0)+'ккал</span></li>';}).join('');
                 var total = item.total || {};
-                var mealData = JSON.stringify({day:item.day, meal:item.meal, title:item.title}).replace(/"/g,'&quot;');
+                var mealData = inlineArg({day:item.day, meal:item.meal, title:item.title});
                 
                 var statusBadge = '';
                 if (item.cooked && item.liked === true) statusBadge = '<span class="meal-status done-liked">👍 Приготовлено</span>';
                 else if (item.cooked && item.liked === false) statusBadge = '<span class="meal-status done-disliked">👎 Приготовлено</span>';
                 else if (item.cooked) statusBadge = '<span class="meal-status done">✅ Приготовлено</span>';
                 
-                html += '<div class="menu-item-wrapper"><div class="menu-item-selector"><input type="checkbox" ' + (isSelected?'checked':'') + ' onchange="toggleMealSelection(\'' + mealId + '\')"></div>';
+                html += '<div class="menu-item-wrapper"><div class="menu-item-selector"><input type="checkbox" ' + (isSelected?'checked':'') + ' onchange="toggleMealSelection(' + inlineArg(mealId) + ')"></div>';
                 html += '<div class="menu-item ' + likedClass + ' ' + cookedClass + '">';
-                html += '<div class="menu-item-header"><span class="menu-meal">' + item.meal + '</span><span class="menu-title">' + item.title + '</span><span class="menu-kcal">' + (total.kcal||0) + 'ккал</span>' + statusBadge + '</div>';
+                html += '<div class="menu-item-header"><span class="menu-meal">' + escapeHtml(item.meal) + '</span><span class="menu-title">' + escapeHtml(item.title) + '</span><span class="menu-kcal">' + Number(total.kcal||0) + 'ккал</span>' + statusBadge + '</div>';
                 html += '<div class="menu-two-columns"><div class="menu-ingredients"><strong>🥗</strong><ul>' + ingredientsHtml + '</ul></div><div class="menu-recipe"><strong>📝</strong><ol class="recipe-steps">' + recipeHtml + '</ol></div></div>';
                 html += '<div class="menu-kbju"><span>🔥' + (total.kcal||0) + '</span><span>🍗' + (total.protein||0) + '</span><span>🧈' + (total.fat||0) + '</span><span>🍚' + (total.carbs||0) + '</span></div>';
                 
@@ -283,7 +290,7 @@ function displayMenu(parsedMenu) {
                     html += '<button class="rate-btn" onclick="openRatingModal(' + mealData + ', true)">👍</button>';
                     html += '<button class="rate-btn dislike" onclick="openRatingModal(' + mealData + ', false)">👎</button>';
                 }
-                html += '<button class="delete-meal-btn-new" onclick="deleteMealFromMenu(\'' + mealId + '\',' + mealData + ')">🗑️</button>';
+                html += '<button class="delete-meal-btn-new" onclick="deleteMealFromMenu(' + inlineArg(mealId) + ',' + mealData + ')">🗑️</button>';
                 html += '</div>';
                 
                 html += '</div></div>';
@@ -296,9 +303,10 @@ function displayMenu(parsedMenu) {
 }
 
 function toggleMealSelection(mealId) { if(selectedMealsForRegenerate.has(mealId)) selectedMealsForRegenerate.delete(mealId); else selectedMealsForRegenerate.add(mealId); displayMenu(appData.parsedMenu); }
-function selectAllMealsInMenu() { appData.parsedMenu?.forEach(function(item) { selectedMealsForRegenerate.add(item.day + '_' + item.meal + '_' + item.title.replace(/[^a-zA-Z0-9]/g,'_')); }); displayMenu(appData.parsedMenu); }
+function getMealId(item) { return encodeURIComponent(item.day + '\u0000' + item.meal + '\u0000' + item.title); }
+function selectAllMealsInMenu() { appData.parsedMenu?.forEach(function(item) { selectedMealsForRegenerate.add(getMealId(item)); }); displayMenu(appData.parsedMenu); }
 function deselectAllMealsInMenu() { selectedMealsForRegenerate.clear(); displayMenu(appData.parsedMenu); }
-function selectUncookedMeals() { selectedMealsForRegenerate.clear(); appData.parsedMenu?.forEach(function(item) { if (!item.cooked) selectedMealsForRegenerate.add(item.day + '_' + item.meal + '_' + item.title.replace(/[^a-zA-Z0-9]/g,'_')); }); displayMenu(appData.parsedMenu); }
+function selectUncookedMeals() { selectedMealsForRegenerate.clear(); appData.parsedMenu?.forEach(function(item) { if (!item.cooked) selectedMealsForRegenerate.add(getMealId(item)); }); displayMenu(appData.parsedMenu); }
 
 async function deleteMealFromMenu(mealId, mealInfo) {
     if (!confirm('Удалить "' + mealInfo.title + '"?')) return;
@@ -309,14 +317,14 @@ async function deleteMealFromMenu(mealId, mealInfo) {
 async function deleteSelectedMeals() {
     if (!selectedMealsForRegenerate.size) { alert('⚠️ Выбери блюда'); return; }
     if (!confirm('Удалить ' + selectedMealsForRegenerate.size + ' блюд?')) return;
-    appData.parsedMenu = appData.parsedMenu.filter(function(item) { return !selectedMealsForRegenerate.has(item.day + '_' + item.meal + '_' + item.title.replace(/[^a-zA-Z0-9]/g,'_')); });
+    appData.parsedMenu = appData.parsedMenu.filter(function(item) { return !selectedMealsForRegenerate.has(getMealId(item)); });
     selectedMealsForRegenerate.clear(); reworkReasons = {};
     await dbSaveMenu(appData.parsedMenu, appData.weekStartDate); displayMenu(appData.parsedMenu);
 }
 
 function generateReworkPrompt() {
     if (!selectedMealsForRegenerate.size) { alert('⚠️ Выбери блюда'); return; }
-    var selected = appData.parsedMenu.filter(function(item) { return selectedMealsForRegenerate.has(item.day + '_' + item.meal + '_' + item.title.replace(/[^a-zA-Z0-9]/g,'_')); });
+    var selected = appData.parsedMenu.filter(function(item) { return selectedMealsForRegenerate.has(getMealId(item)); });
     var p = 'Замени:\n' + selected.map(function(m) { return '- ' + m.day + ' ' + m.meal + ': ' + m.title; }).join('\n') + '\n\nФормат JSON.';
     document.getElementById('promptText').value = p;
     if (navigator.clipboard) navigator.clipboard.writeText(p);
@@ -326,7 +334,7 @@ function generateReplacementPrompt() {
     var disliked = (appData.parsedMenu || []).filter(function(m) { return m.liked === false; });
     if (!disliked.length) { alert('Нет непонравившихся'); return; }
     selectedMealsForRegenerate.clear();
-    disliked.forEach(function(m) { selectedMealsForRegenerate.add(m.day + '_' + m.meal + '_' + m.title.replace(/[^a-zA-Z0-9]/g,'_')); });
+    disliked.forEach(function(m) { selectedMealsForRegenerate.add(getMealId(m)); });
     generateReworkPrompt();
 }
 

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🍽️ Мой планировщик меню</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff6b6b">
     <link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
@@ -43,5 +45,8 @@
     <script src="js/menu/menu.js?v=12"></script>
     <script src="js/stats/stats.js?v=12"></script>
     <script src="js/shopping/shopping.js?v=12"></script>
+    <script>
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(console.error);
+    </script>
 </body>
 </html>
