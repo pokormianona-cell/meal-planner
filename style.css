@@ -1073,3 +1073,25 @@ h1 { color:var(--color-wine); } h1::after { color:var(--color-mustard); } h2::be
 .category-block,.menu-day-block,.shopping-category-artdeco,.rating-item-artdeco { border-color:var(--color-gold); border-radius:0; }
 .category-header { background:linear-gradient(90deg,rgba(201,105,77,.14),rgba(201,154,56,.16),transparent); border-color:var(--color-gold); }.category-header:hover { background:linear-gradient(90deg,rgba(201,105,77,.25),rgba(201,154,56,.25),transparent); }
 .category-count { background:var(--color-terracotta); }.modal-content { border-color:var(--color-gold); border-radius:0; background:linear-gradient(145deg,#f8f0e7,#fffaf3); }.modal-overlay { background:rgba(76,52,56,.58); }
+
+/* A bolder deco composition: stepped frames, sunbursts and jewel-colour panels. */
+body { background:linear-gradient(115deg,#d7c1aa 0 12%,#f7efe5 12% 88%,#d7c1aa 88%); }
+body::after { content:''; position:fixed; inset:0; pointer-events:none; background:repeating-linear-gradient(90deg,transparent 0 58px,rgba(99,58,66,.035) 59px 60px); }
+.app-container { max-width:1280px; padding:44px 48px; border:1px solid var(--color-wine); outline:5px double var(--color-gold); outline-offset:-13px; box-shadow:18px 18px 0 rgba(117,128,82,.25),0 22px 45px rgba(76,52,56,.22); }
+.app-container > div:first-child { padding:8px 0 25px; border-bottom:3px double var(--color-gold); }
+h1 { font-size:clamp(2.1rem,5vw,3.5rem); letter-spacing:.09em; text-shadow:3px 3px 0 rgba(201,154,56,.22); }
+h1::after { content:'◆  ✦  ◆'; bottom:-18px; font-size:.8rem; letter-spacing:.55rem; white-space:nowrap; }
+.tabs { gap:0; justify-content:center; border-top:1px solid var(--color-wine); border-bottom:1px solid var(--color-wine); padding:5px 0; }
+.tab { min-width:138px; padding:12px 20px; color:var(--color-wine); font-family:'Cormorant Garamond',serif; font-size:1.12rem; letter-spacing:.08em; }
+.tab.active { background:var(--color-terracotta); color:#fffaf3; clip-path:polygon(11px 0,calc(100% - 11px) 0,100% 11px,100% calc(100% - 11px),calc(100% - 11px) 100%,11px 100%,0 calc(100% - 11px),0 11px); }
+.tab.active::before { display:none; }
+.content > h2 { border-bottom:2px solid var(--color-gold); padding-bottom:8px; }
+.primary-btn,.olive-btn,.plum-btn,.rose-btn,.add-btn,.secondary-btn { border-radius:0; clip-path:polygon(9px 0,calc(100% - 9px) 0,100% 9px,100% calc(100% - 9px),calc(100% - 9px) 100%,9px 100%,0 calc(100% - 9px),0 9px); font-family:'Cormorant Garamond',serif; font-size:1rem; letter-spacing:.08em; }
+.small-btn { border-radius:0; border-color:var(--color-wine); font-family:'Cormorant Garamond',serif; font-size:.95rem; }
+.category-block,.menu-day-block,.shopping-category-artdeco,.rating-item-artdeco { border:2px solid var(--color-gold); clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px); box-shadow:7px 7px 0 rgba(189,123,125,.18); }
+.category-header { padding:18px 26px; background:linear-gradient(90deg,rgba(201,105,77,.24),rgba(201,154,56,.2) 55%,transparent); }
+.category-title { font-size:1.55rem; letter-spacing:.09em; }.category-count { border-radius:0; background:var(--color-wine); }
+.menu-item-header { border-bottom:1px solid var(--color-gold); background:linear-gradient(90deg,rgba(117,128,82,.13),transparent); }
+.summary-card { border:1px solid var(--color-gold); border-radius:0; background:linear-gradient(145deg,#fffaf3,#f1dfcd); }
+.modal-content { border:2px solid var(--color-gold); outline:1px solid var(--color-wine); outline-offset:-9px; }
+@media (max-width:600px) { .app-container{padding:32px 20px;outline-offset:-9px}.app-container > div:first-child{gap:12px!important}.tabs{justify-content:flex-start}.tab{min-width:auto;padding:10px 14px}.category-header{padding:15px 18px} }
