@@ -168,8 +168,16 @@ async function loadAllDataToAppData() {
     appData.selectedMeals = settings.selectedMeals || [];
     appData.menuHistory = await dbGetMenuHistory();
     appData.shoppingList = settings.shoppingList || [];
-    appData.weekStartDate = settings.weekStartDate || null;
-    if (appData.weekStartDate) appData.parsedMenu = await dbGetMenuForWeek(appData.weekStartDate) || [];
+    const storedWeekStart = settings.weekStartDate || null;
+    appData.weekStartDate = normalizeWeekStartDate(storedWeekStart);
+    if (appData.weekStartDate) {
+        const sourceWeekStart = storedWeekStart || appData.weekStartDate;
+        appData.parsedMenu = normalizeMenu(await dbGetMenuForWeek(sourceWeekStart));
+        if (appData.weekStartDate !== storedWeekStart) {
+            await dbSaveSetting('weekStartDate', appData.weekStartDate);
+            if (appData.parsedMenu.length) await dbSaveMenu(appData.parsedMenu, appData.weekStartDate);
+        }
+    }
 }
 
 async function saveAppDataToDB() {

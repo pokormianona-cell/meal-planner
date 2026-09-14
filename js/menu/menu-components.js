@@ -219,11 +219,11 @@ async function parseClaudeResponse() {
         var s = j.indexOf('['), e = j.lastIndexOf(']');
         if (s === -1 || e === -1) throw new Error('JSON не найден');
         var menu = JSON.parse(j.substring(s, e+1));
-        var dayAliases = { 'Вс':'Воскресенье', 'Воскресенье':'Воскресенье', 'Пн':'Понедельник', 'Понедельник':'Понедельник', 'Вт':'Вторник', 'Вторник':'Вторник', 'Ср':'Среда', 'Среда':'Среда', 'Чт':'Четверг', 'Четверг':'Четверг', 'Пт':'Пятница', 'Пятница':'Пятница', 'Сб':'Суббота', 'Суббота':'Суббота' };
         if (!Array.isArray(menu)) throw new Error('Ожидался массив блюд');
         menu.forEach(function(m) {
-            if (!m || !dayAliases[m.day] || !m.meal || !m.title) throw new Error('У блюда не заполнены день, приём пищи или название');
-            m.day = dayAliases[m.day]; m.cooked = Boolean(m.cooked); m.liked = m.liked != null ? Boolean(m.liked) : null;
+            const normalizedDay = m && normalizeMenuDay(m.day);
+            if (!m || !normalizedDay || !m.meal || !m.title) throw new Error('У блюда не заполнены день, приём пищи или название');
+            m.day = normalizedDay; m.cooked = Boolean(m.cooked); m.liked = m.liked != null ? Boolean(m.liked) : null;
             m.recipe = Array.isArray(m.recipe) ? m.recipe : (m.recipe ? [m.recipe] : []);
             m.ingredients = Array.isArray(m.ingredients) ? m.ingredients : [];
         });

@@ -55,6 +55,35 @@ function escapeHtml(value) {
 
 function inlineArg(value) { return escapeHtml(JSON.stringify(value)); }
 
+function normalizeMenuDay(value) {
+    const source = String(value || '').trim().toLowerCase();
+    const aliases = {
+        'вс': 'Воскресенье', 'воскресенье': 'Воскресенье',
+        'пн': 'Понедельник', 'понедельник': 'Понедельник',
+        'вт': 'Вторник', 'вторник': 'Вторник',
+        'ср': 'Среда', 'среда': 'Среда',
+        'чт': 'Четверг', 'четверг': 'Четверг',
+        'пт': 'Пятница', 'пятница': 'Пятница',
+        'сб': 'Суббота', 'суббота': 'Суббота'
+    };
+    const alias = Object.keys(aliases).find(key => source === key || source.startsWith(key + ',') || source.startsWith(key + ' '));
+    return alias ? aliases[alias] : null;
+}
+
+function normalizeMenu(menu) {
+    return Array.isArray(menu) ? menu.map(item => Object.assign({}, item, { day: normalizeMenuDay(item.day) || item.day })) : [];
+}
+
+function normalizeWeekStartDate(value) {
+    if (!value) return null;
+    const date = new Date(value + 'T00:00:00');
+    if (Number.isNaN(date.getTime())) return null;
+    // Older builds serialized local Sunday as the preceding UTC Saturday.
+    if (date.getDay() === 6) date.setDate(date.getDate() + 1);
+    else date.setDate(date.getDate() - date.getDay());
+    return formatLocalDate(date);
+}
+
 // ============================================
 // ДАТЫ (НЕДЕЛЯ С ВОСКРЕСЕНЬЯ)
 // ============================================
@@ -111,7 +140,7 @@ async function saveCurrentMenu() {
 async function loadMenuForCurrentWeek() {
     if (!appData.weekStartDate) return false;
     var menu = await dbGetMenuForWeek(appData.weekStartDate);
-    appData.parsedMenu = menu || [];
+    appData.parsedMenu = normalizeMenu(menu);
     return appData.parsedMenu.length > 0;
 }
 
