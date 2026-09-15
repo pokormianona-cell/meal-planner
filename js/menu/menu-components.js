@@ -59,9 +59,9 @@ function showMenuTab() {
     html += '<div class="response-panel"><h3>📥 Ответ от DeepSeek</h3>';
     html += '<textarea id="claudeResponse" placeholder="Вставь JSON-ответ..." rows="2"></textarea>';
     html += '<div class="response-actions">';
-    html += '<button class="primary-btn" onclick="parseClaudeResponse()">🔍 Распарсить</button>';
+    html += '<button id="parseMenuButton" class="primary-btn" onclick="parseClaudeResponse()">🔍 Распарсить</button>';
     html += '<label class="secondary-btn" style="cursor:pointer;">📂 Загрузить<input type="file" accept=".json,.txt" onchange="loadResponseFromFile(event)" style="display:none;"></label>';
-    html += '</div></div>';
+    html += '</div><p id="parseMenuStatus" class="parse-menu-status" role="status" aria-live="polite"></p></div>';
     
     html += '<div id="menuDisplay" class="menu-display"></div>';
     
@@ -212,10 +212,15 @@ function checkForSavedResponse() { if(appData.lastClaudeResponse) document.getEl
 async function parseClaudeResponse() {
     var r = document.getElementById('claudeResponse').value.trim();
     if (!r) { alert('⚠️ Вставь JSON'); return; }
-    r = r.replace(/[^\x20-\x7E\u0400-\u04FF]/g, '');
-    appData.lastClaudeResponse = r; await dbSaveSetting('lastClaudeResponse', r);
+    var button = document.getElementById('parseMenuButton');
+    var status = document.getElementById('parseMenuStatus');
+    if (button) button.disabled = true;
+    if (status) { status.className = 'parse-menu-status is-working'; status.textContent = 'Проверяю JSON…'; }
+
     try {
-        var j = r.replace(/```json\s*/gi, '').replace(/```/g, '');
+        // Keep valid Unicode used in recipes (°C, long dashes, emoji), removing only
+        // invisible formatting characters and optional Markdown fences.
+        var j = r.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '').replace(/^\s*```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '');
         var s = j.indexOf('['), e = j.lastIndexOf(']');
         if (s === -1 || e === -1) throw new Error('JSON не найден');
         var menu = JSON.parse(j.substring(s, e+1));
@@ -228,13 +233,27 @@ async function parseClaudeResponse() {
             m.ingredients = Array.isArray(m.ingredients) ? m.ingredients : [];
         });
         appData.parsedMenu = menu;
-        await dbSaveMenu(menu, appData.weekStartDate);
-        appData.menuHistory = await dbGetMenuHistory();
         selectedMealsForRegenerate.clear(); reworkReasons = {}; collapsedDays.clear();
         displayMenu(menu);
         if (document.getElementById('todayStatsContent')) document.getElementById('todayStatsContent').innerHTML = renderTodayStats();
-        alert('✅ Меню сохранено! ' + menu.length + ' блюд.');
-    } catch (ex) { alert('❌ Ошибка JSON: ' + ex.message); }
+        if (status) { status.className = 'parse-menu-status is-working'; status.textContent = 'Распознано ' + menu.length + ' блюд. Сохраняю…'; }
+
+        try {
+            await dbSaveMenu(menu, appData.weekStartDate);
+            appData.menuHistory = await dbGetMenuHistory();
+            if (status) { status.className = 'parse-menu-status is-success'; status.textContent = '✓ Меню сохранено: ' + menu.length + ' блюд.'; }
+            alert('✅ Меню сохранено! ' + menu.length + ' блюд.');
+        } catch (saveError) {
+            console.error('Не удалось сохранить распознанное меню', saveError);
+            if (status) { status.className = 'parse-menu-status is-error'; status.textContent = 'Меню распознано и показано, но не сохранилось: ' + saveError.message; }
+            alert('⚠️ Меню распознано, но не сохранилось: ' + saveError.message);
+        }
+    } catch (ex) {
+        if (status) { status.className = 'parse-menu-status is-error'; status.textContent = 'Не удалось разобрать JSON: ' + ex.message; }
+        alert('❌ Ошибка JSON: ' + ex.message);
+    } finally {
+        if (button) button.disabled = false;
+    }
 }
 
 function calculateDayKbju(day) {

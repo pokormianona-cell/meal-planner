@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'meal-planner-v5';
+const CACHE_NAME = 'meal-planner-v6';
 
 self.addEventListener('install', event => {
     event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll([

@@ -722,6 +722,11 @@ h3 { font-size: 1.3rem; font-weight: 500; color: var(--color-plum); letter-spaci
 }
 
 .response-actions { display: flex; gap: var(--spacing-md); }
+.parse-menu-status { min-height:1.25em; margin:10px 0 0; font-size:.84rem; }
+.parse-menu-status:empty { display:none; }
+.parse-menu-status.is-working { color:var(--color-text-light); }
+.parse-menu-status.is-success { color:var(--color-olive); font-weight:600; }
+.parse-menu-status.is-error { color:var(--color-terracotta); font-weight:600; }
 
 /* КАРТОЧКИ БЛЮД */
 .menu-day-block {
