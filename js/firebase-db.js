@@ -2,7 +2,108 @@
    firebase-db.js - работа с Firebase Firestore
 */
 
-const db = window.firebaseDB;
+const firebaseOptions = firebase.app().options;
+const FIRESTORE_ROOT = 'https://firestore.googleapis.com/v1/projects/' + encodeURIComponent(firebaseOptions.projectId) + '/databases/(default)';
+const FIRESTORE_API_KEY = firebaseOptions.apiKey;
+
+function firestoreUrl(path, query) {
+    const params = new URLSearchParams(query || {});
+    params.set('key', FIRESTORE_API_KEY);
+    return FIRESTORE_ROOT + path + '?' + params.toString();
+}
+
+function firestoreValue(value) {
+    if (value === null) return { nullValue: null };
+    if (Array.isArray(value)) return { arrayValue: { values: value.map(firestoreValue) } };
+    if (typeof value === 'boolean') return { booleanValue: value };
+    if (typeof value === 'number') return Number.isInteger(value) ? { integerValue: String(value) } : { doubleValue: value };
+    if (typeof value === 'string') return { stringValue: value };
+    if (typeof value === 'object') return { mapValue: { fields: firestoreFields(value) } };
+    return { nullValue: null };
+}
+
+function firestoreFields(data) {
+    const fields = {};
+    Object.keys(data || {}).forEach(key => {
+        if (data[key] !== undefined) fields[key] = firestoreValue(data[key]);
+    });
+    return fields;
+}
+
+function fromFirestoreValue(value) {
+    if (!value || Object.prototype.hasOwnProperty.call(value, 'nullValue')) return null;
+    if (Object.prototype.hasOwnProperty.call(value, 'stringValue')) return value.stringValue;
+    if (Object.prototype.hasOwnProperty.call(value, 'booleanValue')) return value.booleanValue;
+    if (Object.prototype.hasOwnProperty.call(value, 'integerValue')) return Number(value.integerValue);
+    if (Object.prototype.hasOwnProperty.call(value, 'doubleValue')) return Number(value.doubleValue);
+    if (Object.prototype.hasOwnProperty.call(value, 'timestampValue')) return value.timestampValue;
+    if (value.arrayValue) return (value.arrayValue.values || []).map(fromFirestoreValue);
+    if (value.mapValue) return fromFirestoreFields(value.mapValue.fields || {});
+    return null;
+}
+
+function fromFirestoreFields(fields) {
+    const data = {};
+    Object.keys(fields || {}).forEach(key => data[key] = fromFirestoreValue(fields[key]));
+    return data;
+}
+
+function firestoreDocument(document) {
+    const parts = document.name.split('/');
+    return { id: parts[parts.length - 1], ...fromFirestoreFields(document.fields || {}) };
+}
+
+async function firestoreRequest(path, options, query) {
+    const response = await fetch(firestoreUrl(path, query), options);
+    if (response.status === 404) return null;
+    if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error?.message || ('Firebase HTTP ' + response.status));
+    }
+    if (response.status === 204) return null;
+    return response.json();
+}
+
+function firestoreDocumentPath(collection, id) {
+    return '/documents/' + encodeURIComponent(collection) + '/' + encodeURIComponent(String(id));
+}
+
+async function firestoreList(collection) {
+    let pageToken = '';
+    const documents = [];
+    do {
+        const page = await firestoreRequest('/documents/' + encodeURIComponent(collection), null, { pageSize: '300', pageToken });
+        (page.documents || []).forEach(document => documents.push(firestoreDocument(document)));
+        pageToken = page.nextPageToken || '';
+    } while (pageToken);
+    return documents;
+}
+
+async function firestoreGet(collection, id) {
+    const document = await firestoreRequest(firestoreDocumentPath(collection, id));
+    return document ? firestoreDocument(document) : null;
+}
+
+async function firestoreSet(collection, id, data) {
+    return firestoreRequest(firestoreDocumentPath(collection, id), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: firestoreFields(data) })
+    });
+}
+
+async function firestoreAdd(collection, data) {
+    const document = await firestoreRequest('/documents/' + encodeURIComponent(collection), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: firestoreFields(data) })
+    });
+    return firestoreDocument(document);
+}
+
+async function firestoreDelete(collection, id) {
+    await firestoreRequest(firestoreDocumentPath(collection, id), { method: 'DELETE' });
+}
 
 const COLLECTIONS = {
     PRODUCTS: 'products',
@@ -41,46 +142,41 @@ const FEEDBACK_CATEGORIES = {
 
 // ПРОДУКТЫ
 async function dbGetAllProducts() {
-    const snapshot = await db.collection(COLLECTIONS.PRODUCTS).get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return firestoreList(COLLECTIONS.PRODUCTS);
 }
 
 async function dbSaveProduct(product) {
     if (product.id) {
-        await db.collection(COLLECTIONS.PRODUCTS).doc(product.id.toString()).set(product, { merge: true });
+        await firestoreSet(COLLECTIONS.PRODUCTS, product.id, product);
     } else {
-        const docRef = await db.collection(COLLECTIONS.PRODUCTS).add(product);
-        product.id = docRef.id;
+        const saved = await firestoreAdd(COLLECTIONS.PRODUCTS, product);
+        product.id = saved.id;
+        await firestoreSet(COLLECTIONS.PRODUCTS, product.id, product);
     }
 }
 
 async function dbSaveManyProducts(products) {
-    const batch = db.batch();
-    products.forEach(p => {
-        const ref = p.id ? db.collection(COLLECTIONS.PRODUCTS).doc(p.id.toString()) : db.collection(COLLECTIONS.PRODUCTS).doc();
-        batch.set(ref, p);
-    });
-    await batch.commit();
+    for (const product of products) await dbSaveProduct(product);
 }
 
 async function dbDeleteProduct(id) {
-    await db.collection(COLLECTIONS.PRODUCTS).doc(id.toString()).delete();
+    await firestoreDelete(COLLECTIONS.PRODUCTS, id);
 }
 
 // НАСТРОЙКИ
 async function dbSaveSetting(key, value) {
-    await db.collection(COLLECTIONS.USER_SETTINGS).doc(key).set({ value });
+    await firestoreSet(COLLECTIONS.USER_SETTINGS, key, { value });
 }
 
 async function dbGetSetting(key) {
-    const doc = await db.collection(COLLECTIONS.USER_SETTINGS).doc(key).get();
-    return doc.exists ? doc.data().value : null;
+    const document = await firestoreGet(COLLECTIONS.USER_SETTINGS, key);
+    return document ? document.value : null;
 }
 
 async function dbGetAllSettings() {
-    const snapshot = await db.collection(COLLECTIONS.USER_SETTINGS).get();
+    const documents = await firestoreList(COLLECTIONS.USER_SETTINGS);
     const result = {};
-    snapshot.docs.forEach(doc => result[doc.id] = doc.data().value);
+    documents.forEach(document => result[document.id] = document.value);
     return result;
 }
 
@@ -88,54 +184,48 @@ async function dbGetAllSettings() {
 async function dbSaveMenu(menuItems, weekStart) {
     const weekKey = weekStart || appData.weekStartDate;
     const menuCopy = menuItems.map(m => ({ ...m, cooked: m.cooked || false, liked: m.liked ?? null }));
-    await db.collection(COLLECTIONS.MENU_HISTORY).doc(weekKey).set(
-        { date: new Date().toISOString(), weekStart: weekKey, menu: menuCopy }, { merge: true }
-    );
+    await firestoreSet(COLLECTIONS.MENU_HISTORY, weekKey, { date: new Date().toISOString(), weekStart: weekKey, menu: menuCopy });
 }
 
 async function dbGetMenuForWeek(weekStart) {
-    const doc = await db.collection(COLLECTIONS.MENU_HISTORY).doc(weekStart).get();
-    if (doc.exists) return doc.data().menu;
+    const document = await firestoreGet(COLLECTIONS.MENU_HISTORY, weekStart);
+    if (document) return document.menu;
     // Compatibility with records created before weekStart became the document id.
-    const snapshot = await db.collection(COLLECTIONS.MENU_HISTORY).where('weekStart', '==', weekStart).limit(1).get();
-    return snapshot.empty ? null : snapshot.docs[0].data().menu;
+    const history = await firestoreList(COLLECTIONS.MENU_HISTORY);
+    const legacy = history.find(record => record.weekStart === weekStart);
+    return legacy ? legacy.menu : null;
 }
 
 async function dbGetMenuHistory() {
-    const snapshot = await db.collection(COLLECTIONS.MENU_HISTORY).orderBy('date', 'desc').get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const history = await firestoreList(COLLECTIONS.MENU_HISTORY);
+    return history.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
 }
 
 // ОЦЕНКИ
 async function dbSaveMealRating(title, mealInfo, liked, tags = [], notes = '') {
-    await db.collection(COLLECTIONS.MEAL_RATINGS).add({
+    await firestoreAdd(COLLECTIONS.MEAL_RATINGS, {
         title, meal: mealInfo.meal || '', day: mealInfo.day || '',
         liked, tags, notes, date: new Date().toISOString()
     });
 }
 
 async function dbGetMealRatings(title) {
-    const snapshot = await db.collection(COLLECTIONS.MEAL_RATINGS).where('title', '==', title).get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const ratings = await firestoreList(COLLECTIONS.MEAL_RATINGS);
+    return ratings.filter(rating => rating.title === title);
 }
 
 async function dbGetAllRatings() {
-    const snapshot = await db.collection(COLLECTIONS.MEAL_RATINGS).get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return firestoreList(COLLECTIONS.MEAL_RATINGS);
 }
 
 // УДАЛЕНИЕ
 async function deleteFromStore(collection, id) {
-    await db.collection(collection).doc(id.toString()).delete();
+    await firestoreDelete(collection, id);
 }
 
 async function clearStore(collection) {
-    const snapshot = await db.collection(collection).get();
-    for (let index = 0; index < snapshot.docs.length; index += 500) {
-        const batch = db.batch();
-        snapshot.docs.slice(index, index + 500).forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
-    }
+    const documents = await firestoreList(collection);
+    for (const document of documents) await firestoreDelete(collection, document.id);
 }
 
 // ИНИЦИАЛИЗАЦИЯ
@@ -149,9 +239,15 @@ async function initializeDefaultProducts() {
     return existing;
 }
 
-async function loadAllDataToAppData() {
-    appData.products = await dbGetAllProducts();
-    const ratings = await dbGetAllRatings();
+async function loadAllDataToAppData(preloadedProducts) {
+    const loaded = await Promise.all([
+        preloadedProducts || dbGetAllProducts(),
+        dbGetAllRatings(),
+        dbGetAllSettings(),
+        dbGetMenuHistory()
+    ]);
+    appData.products = loaded[0];
+    const ratings = loaded[1];
     appData.mealRatings = {};
     ratings.forEach(r => {
         const key = r.title;
@@ -161,12 +257,12 @@ async function loadAllDataToAppData() {
         if (r.notes) appData.mealRatings[key].comments = r.notes;
         if (!appData.mealRatings[key].lastRated || r.date > appData.mealRatings[key].lastRated) appData.mealRatings[key].lastRated = r.date;
     });
-    const settings = await dbGetAllSettings();
+    const settings = loaded[2];
     appData.userHeight = settings.userHeight || null;
     appData.userWeight = settings.userWeight || null;
     appData.userCalories = settings.userCalories || null;
     appData.selectedMeals = settings.selectedMeals || [];
-    appData.menuHistory = await dbGetMenuHistory();
+    appData.menuHistory = loaded[3];
     appData.shoppingList = settings.shoppingList || [];
     const storedWeekStart = settings.weekStartDate || null;
     appData.weekStartDate = normalizeWeekStartDate(storedWeekStart);
@@ -193,8 +289,8 @@ async function saveAppDataToDB() {
 }
 
 async function initApp() {
-    await initializeDefaultProducts();
-    await loadAllDataToAppData();
+    const products = await initializeDefaultProducts();
+    await loadAllDataToAppData(products);
     return appData;
 }
 
@@ -215,11 +311,11 @@ async function uploadBackup(file) {
                 throw new Error('Неверный формат бэкапа');
             }
             if (data.products) { await clearStore(COLLECTIONS.PRODUCTS); await dbSaveManyProducts(data.products); }
-            if (data.ratings) { await clearStore(COLLECTIONS.MEAL_RATINGS); for (const r of data.ratings) await db.collection(COLLECTIONS.MEAL_RATINGS).add(r); }
+            if (data.ratings) { await clearStore(COLLECTIONS.MEAL_RATINGS); for (const r of data.ratings) await firestoreAdd(COLLECTIONS.MEAL_RATINGS, r); }
             await clearStore(COLLECTIONS.MENU_HISTORY);
             for (const record of data.menuHistory) {
                 if (!record.weekStart || !Array.isArray(record.menu)) throw new Error('Повреждённая запись меню');
-                await db.collection(COLLECTIONS.MENU_HISTORY).doc(record.weekStart).set({ date: record.date || new Date().toISOString(), weekStart: record.weekStart, menu: record.menu });
+                await firestoreSet(COLLECTIONS.MENU_HISTORY, record.weekStart, { date: record.date || new Date().toISOString(), weekStart: record.weekStart, menu: record.menu });
             }
             if (data.settings) { for (const [k, v] of Object.entries(data.settings)) await dbSaveSetting(k, v); }
             await loadAllDataToAppData();
