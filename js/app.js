@@ -241,7 +241,13 @@ function showTab(tabName) {
 // ============================================
 
 document.addEventListener('DOMContentLoaded', async function() {
-    if (typeof initApp === 'function') await initApp();
+    try {
+        if (typeof initApp === 'function') await initApp();
+    } catch (error) {
+        console.error('Не удалось загрузить данные приложения', error);
+        document.getElementById('content').innerHTML = '<div class="today-empty"><strong>Не удалось загрузить данные.</strong><p>Продукты не удалены — приложение просто не смогло связаться с Firebase. Проверь соединение и попробуй ещё раз.</p><button class="primary-btn" onclick="window.location.reload()">Повторить</button> <button class="small-btn" onclick="window.location.href=\'https://pokormianona-cell.github.io/meal-planner/\'">Открыть актуальную версию</button></div>';
+        return;
+    }
     
     if (appData.products.length === 0 && typeof MY_PRODUCTS !== 'undefined') {
         appData.products = MY_PRODUCTS.map(function(p, i) {

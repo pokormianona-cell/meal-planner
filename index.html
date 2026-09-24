@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🍽️ Мой планировщик меню</title>
+    <script>
+        if (window.location.protocol === 'file:') {
+            window.location.replace('https://pokormianona-cell.github.io/meal-planner/');
+        }
+    </script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ff6b6b">
     <link rel="stylesheet" href="style.css?v=16">
@@ -36,7 +41,7 @@
         firebase.initializeApp({apiKey:"AIzaSyCBmU1KimDDdMnfdQ8bhPS5X9l0AViF1jk",authDomain:"meal-planner-826fb.firebaseapp.com",projectId:"meal-planner-826fb",storageBucket:"meal-planner-826fb.firebasestorage.app",messagingSenderId:"56628172488",appId:"1:56628172488:web:803d2794038d61cc47f7fd"});
     </script>
     <script src="js/firebase-db.js?v=13"></script>
-    <script src="js/app.js?v=12"></script>
+    <script src="js/app.js?v=13"></script>
     <script src="js/today.js?v=2"></script>
     <script src="js/products/products.js?v=12"></script>
     <script src="js/menu/menu-components.js?v=14"></script>
@@ -46,7 +51,7 @@
     <script src="js/stats/stats.js?v=12"></script>
     <script src="js/shopping/shopping.js?v=12"></script>
     <script>
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(console.error);
+        if (window.location.protocol !== 'file:' && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(console.error);
     </script>
 </body>
 </html>
